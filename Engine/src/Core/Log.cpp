@@ -95,7 +95,7 @@ namespace Refraction {
 			for (auto& callback : Callbacks) {
 				callback(timestampColour, "[" + timestamp + "]", true);
 				callback(separatorColour, " - ", false);
-				callback(typeColour, logType + " ", false);
+				callback(typeColour, logType, false);
 				callback(separatorColour, " - ", false);
 				callback(printColour, message, false);
 			}
@@ -134,9 +134,9 @@ namespace Refraction {
 					testLambda = false;
 					break;
 				}
-				// Go to previous frame
-				frameIndex++;
 			}
+			// Go to previous frame
+			frameIndex++;
 		}
 		
 		// Get function and class name from frame

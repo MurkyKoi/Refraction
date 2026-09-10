@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <utility>
 
 #include <Core/Common.h>
 #include <Core/Singleton.h>
@@ -11,12 +12,12 @@ namespace Refraction::Engine {
 	// Singleton that handles the AssetMap and Assets directory
 	class AssetManager : public Singleton<AssetManager> {
 	public:
-		AssetManager(std::filesystem::path projectPath) : mProjectPath(projectPath) {}
+		AssetManager(std::filesystem::path projectPath) : mProjectPath(std::move(projectPath)) {}
 		~AssetManager() = default;
 
 		// Get asset by UUID
 		template <typename AssetType> requires Common::DerivesFrom<Assets::Asset, AssetType>
-		Common::Ref<AssetType> GetAsset(UUIDValue uuid) {
+		Common::Ref<AssetType> GetAsset(const UUIDValue uuid) {
 			if (mAssetMap.contains(uuid)) return Common::NewRef<AssetType>(std::dynamic_pointer_cast<AssetType>(mAssetMap.at(uuid)));
 			// Asset isn't in memory, try finding and loading it
 			if (auto metaPath = FindMetadataFile(uuid); std::filesystem::exists(metaPath)) {
@@ -31,11 +32,11 @@ namespace Refraction::Engine {
 		Common::Ref<AssetType> GetAsset(std::filesystem::path assetPath) {
 			// If invalid path, try appending to assets directory path
 			if (!IsValidAsset(assetPath)) assetPath = mProjectPath / "Assets" / assetPath;
-			for (auto& assetPair : mAssetMap) {
-				auto& asset = assetPair.second;
+			for (auto &val: mAssetMap | std::views::values) {
+				const auto& asset = val;
 				auto metaWeak = FetchMetadata(asset->GetUUID());
 				if (metaWeak.expired()) continue;
-				auto meta = metaWeak.lock();
+				const auto meta = metaWeak.lock();
 				if (meta->AssetPath == assetPath) {
 					return Common::NewRef<AssetType>(std::dynamic_pointer_cast<AssetType>(asset));
 				}
@@ -49,11 +50,11 @@ namespace Refraction::Engine {
 			}
 			return {};
 		}
-		Common::Ref<Assets::Asset> GetAsset(std::filesystem::path assetPath) { return GetAsset<Assets::Asset>(assetPath); }
+		Common::Ref<Assets::Asset> GetAsset(const std::filesystem::path &assetPath) { return GetAsset<Assets::Asset>(assetPath); }
 
 		// Attempts to fetch an asset's metadata with the given UUID
 		template <typename MetadataType> requires Common::DerivesFrom<Assets::AssetMetadata, MetadataType>
-		Common::Ref<MetadataType> FetchMetadata(UUIDValue uuid) {
+		Common::Ref<MetadataType> FetchMetadata(const UUIDValue uuid) {
 			// Try searching map
 			if (mMetadataMap.contains(uuid)) return Common::NewRef<MetadataType>(std::dynamic_pointer_cast<MetadataType>(mMetadataMap.at(uuid)));
 			// Not loaded, try deep search on disk
@@ -66,7 +67,7 @@ namespace Refraction::Engine {
 			// Not found
 			return {};
 		}
-		Common::Ref<Assets::AssetMetadata> FetchMetadata(UUIDValue uuid) { return FetchMetadata<Assets::AssetMetadata>(uuid); }
+		Common::Ref<Assets::AssetMetadata> FetchMetadata(const UUIDValue uuid) { return FetchMetadata<Assets::AssetMetadata>(uuid); }
 
 		template <typename AssetType> requires Common::DerivesFrom<Assets::Asset, AssetType>
 		Common::Ref<AssetType> MakeVolatile() {
@@ -84,23 +85,24 @@ namespace Refraction::Engine {
 		// Loads all assets into memory using their metadata under the project folder
 		void RegisterAllAssets();
 		// Loads the specified asset into memory using its metadata
-		Common::Ref<Assets::Asset> RegisterAsset(std::filesystem::path metadataPath);
+		Common::Ref<Assets::Asset> RegisterAsset(const std::filesystem::path& metadataPath);
 
 		// Unloads all assets and metadata from memory
 		void UnloadAll();
 
 		// Determines whether the asset is valid (has metadata file, in current project, etc)
-		bool IsValidAsset(std::filesystem::path assetPath);
+		bool IsValidAsset(const std::filesystem::path &assetPath) const;
 		// Returns path of the asset's metadata file
-		std::optional<std::filesystem::path> GetMetadataPath(std::filesystem::path assetPath);
+		std::optional<std::filesystem::path> GetMetadataPath(std::filesystem::path assetPath) const;
 	private:
 		std::unordered_map<UUIDValue, Common::Shared<Assets::Asset>> mAssetMap = {};
 		std::unordered_map<UUIDValue, Common::Shared<Assets::AssetMetadata>> mMetadataMap = {};
 		std::filesystem::path mProjectPath;
 
-		void RecursiveRegisterAssets(std::filesystem::path folder);
-		Common::Shared<Assets::AssetMetadata> RecursiveFindMetadataByUUID(std::filesystem::path folder, UUIDValue uuid);
-		Common::Shared<Assets::AssetMetadata> LoadMetadata(std::filesystem::path metadataPath);
+		void RecursiveRegisterAssets(const std::filesystem::path& folder);
+
+		static Common::Shared<Assets::AssetMetadata> RecursiveFindMetadataByUUID(const std::filesystem::path& folder, UUIDValue uuid);
+		Common::Shared<Assets::AssetMetadata> LoadMetadata(const std::filesystem::path& metadataPath);
 
 		// Attempts to find an asset's metadata file with the given UUID
 		inline std::filesystem::path FindMetadataFile(UUIDValue uuid) {

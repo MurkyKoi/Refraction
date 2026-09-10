@@ -8,17 +8,16 @@ namespace Refraction::Engine {
 		RecursiveRegisterAssets(mProjectPath / "Assets");
 	}
 
-	Common::Ref<Assets::Asset> AssetManager::RegisterAsset(std::filesystem::path metadataPath) {
-		auto pathStr = metadataPath.string();
+	Common::Ref<Assets::Asset> AssetManager::RegisterAsset(const std::filesystem::path& metadataPath) {
+		const auto pathStr = metadataPath.string();
 		if (!(std::filesystem::exists(metadataPath) && std::filesystem::is_regular_file(metadataPath) && metadataPath.has_extension() && metadataPath.extension() == RFCT_ASSET_METADATA_EXTENSION)) {
 			Log::SError("Invalid metadata file at path " + pathStr);
-			return Common::Ref<Assets::Asset>();
+			return {};
 		}
 
-		auto meta = LoadMetadata(metadataPath);
+		const auto meta = LoadMetadata(metadataPath);
 		auto asset = Utilities::ClassSerialiser::DeserialiseAsset(meta);
-		auto& uuid = meta->AssetUUID;
-		if (!mAssetMap.count(uuid)) {
+		if (const auto& uuid = meta->AssetUUID; !mAssetMap.contains(uuid)) {
 			mAssetMap[uuid] = asset;
 			return asset;
 		} else {
@@ -43,14 +42,12 @@ namespace Refraction::Engine {
 		}
 	}
 
-	bool AssetManager::IsValidAsset(std::filesystem::path assetPath) {
-		auto metaPathOpt = GetMetadataPath(assetPath);
-		if (!metaPathOpt) return false;
-		auto metaPath = metaPathOpt.value();
+	bool AssetManager::IsValidAsset(const std::filesystem::path &assetPath) const {
+		if (const auto metaPathOpt = GetMetadataPath(assetPath); !metaPathOpt) return false;
 		return true;
 	}
 
-	std::optional<std::filesystem::path> AssetManager::GetMetadataPath(std::filesystem::path assetPath) {
+	std::optional<std::filesystem::path> AssetManager::GetMetadataPath(std::filesystem::path assetPath) const {
 		auto assetName = assetPath.filename().string();
 		// Make sure it's a full path before searching it
 		if (assetPath.string().find(mProjectPath.string()) == std::string::npos) assetPath = mProjectPath / "Assets" / assetPath;
@@ -61,20 +58,17 @@ namespace Refraction::Engine {
 		return std::nullopt;
 	}
 
-	void AssetManager::RecursiveRegisterAssets(std::filesystem::path folder) {
-		auto metaFiles = FileHandling::GetFilesOfExtInFolder(folder, RFCT_ASSET_METADATA_EXTENSION);
-		for (auto& metaFile : metaFiles) {
+	void AssetManager::RecursiveRegisterAssets(const std::filesystem::path& folder) {
+		for (const auto metaFiles = FileHandling::GetFilesOfExtInFolder(folder, RFCT_ASSET_METADATA_EXTENSION); auto& metaFile : metaFiles) {
 			RegisterAsset(metaFile);
 		}
-		auto folders = FileHandling::GetFoldersInFolder(folder);
-		for (auto& child : folders) {
+		for (const auto folders = FileHandling::GetFoldersInFolder(folder); auto& child : folders) {
 			RecursiveRegisterAssets(child);
 		}
 	}
 
-	Common::Shared<Assets::AssetMetadata> AssetManager::RecursiveFindMetadataByUUID(std::filesystem::path folder, UUIDValue uuid) {
-		auto metaFiles = FileHandling::GetFilesOfExtInFolder(folder, RFCT_ASSET_METADATA_EXTENSION);
-		for (auto& metaFile : metaFiles) {
+	Common::Shared<Assets::AssetMetadata> AssetManager::RecursiveFindMetadataByUUID(const std::filesystem::path& folder, const UUIDValue uuid) {
+		for (const auto metaFiles = FileHandling::GetFilesOfExtInFolder(folder, RFCT_ASSET_METADATA_EXTENSION); auto& metaFile : metaFiles) {
 			auto dataStr = FileHandling::ReadFile(metaFile);
 			auto meta = Assets::AssetMetadata::CastedDeserialise(dataStr);
 			// Return result
@@ -82,19 +76,18 @@ namespace Refraction::Engine {
 			if (meta->AssetUUID.AsInt() == uuid) return meta;
 		}
 		// Continue searching
-		auto folders = FileHandling::GetFoldersInFolder(folder);
-		for (auto& child : folders) {
+		for (const auto folders = FileHandling::GetFoldersInFolder(folder); auto& child : folders) {
 			RecursiveFindMetadataByUUID(child, uuid);
 		}
 		return nullptr;
 	}
 
-	Common::Shared<Assets::AssetMetadata> AssetManager::LoadMetadata(std::filesystem::path metadataPath) {
+	Common::Shared<Assets::AssetMetadata> AssetManager::LoadMetadata(const std::filesystem::path& metadataPath) {
 		if (!std::filesystem::exists(metadataPath)) {
 			Log::SError("Could not find metadata file at path " + metadataPath.string());
 			return nullptr;
 		}
-		auto dataStr = FileHandling::ReadFile(metadataPath);
+		const auto dataStr = FileHandling::ReadFile(metadataPath);
 
 		// TODO: Optimise by checking if UUID already exists in map before doing CastedDeserialise
 		auto meta = Assets::AssetMetadata::CastedDeserialise(dataStr);

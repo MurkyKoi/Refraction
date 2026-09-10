@@ -12,9 +12,9 @@ namespace Refraction::Assets {
 	Common::Shared<AssetMetadata> AssetMetadata::CastedDeserialise(const std::string& data) {
 		MetadataType metaType;
 		Utilities::ClassSerialiser::TryParseJSON(data, [&](nlohmann::json& json) {
-			for (int i = 0; i < (int)MetadataType::COUNT; i++) {
+			for (int i = 0; i < static_cast<int>(MetadataType::COUNT); i++) {
 				if (json["MetadataType"] == MetadataTypeName[i]) {
-					metaType = (MetadataType)i;
+					metaType = static_cast<MetadataType>(i);
 					break;
 				}
 			}
@@ -48,7 +48,7 @@ namespace Refraction::Assets {
 	nlohmann::json AssetMetadata::Serialise() {
 		return Utilities::ClassSerialiser::AppendJSON({}, [&](nlohmann::json& json) {
 			json["AssetType"] = AssetType;
-			json["MetadataType"] = MetadataTypeName[(int)MetaType];
+			json["MetadataType"] = MetadataTypeName[static_cast<int>(MetaType)];
 			json["AssetUUID"] = AssetUUID.Serialise();
 			json["SourcePath"] = SourcePath.string();
 			json["AssetPath"] = AssetPath.string();
@@ -59,9 +59,9 @@ namespace Refraction::Assets {
 	void AssetMetadata::Deserialise(std::string data) {
 		Utilities::ClassSerialiser::TryParseJSON(std::move(data), [&](nlohmann::json& json) {
 			AssetUUID = UUID::Deserialise(json["AssetUUID"]);
-			for (int i = 0; i < (int)MetadataType::COUNT; i++) {
+			for (int i = 0; i < static_cast<int>(MetadataType::COUNT); i++) {
 				if (json["MetadataType"] == MetadataTypeName[i]) {
-					MetaType = (MetadataType)i;
+					MetaType = static_cast<MetadataType>(i);
 					break;
 				}
 			}

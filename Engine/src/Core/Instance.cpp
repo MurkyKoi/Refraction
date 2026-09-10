@@ -2,6 +2,8 @@
 
 Settings* Settings::CurrentSettings = new Settings();
 
+bool Refraction::Common::RuntimeExternalReady = false;
+
 namespace Refraction::Engine {
 	Instance::Instance() {
 		try {

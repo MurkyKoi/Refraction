@@ -68,7 +68,7 @@ namespace Refraction {
 		};
 
 		// Use to prevent calls to external libraries during pre-main() initialisation
-		static inline bool RuntimeExternalReady = false;
+		extern bool RuntimeExternalReady;
 	}
 
 	class Log {

@@ -298,210 +298,210 @@ namespace Refraction::Engine {
 			RemoteProjectCommand cmd = json.at("Command").get<RemoteProjectCommand>();
 
 			switch (cmd) {
-			case RemoteProjectCommand::AddObject:
-			{
-				if (!json.contains("ParentUUID")) {
-					Log::Editor.Warn("No Parent UUID provided with command, ignoring message");
-					return;
-				}
-				if (!json.contains("SerialisedObject")) {
-					Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
-					return;
-				}
-				auto uuid = UUID::FromExisting(json.at("ParentUUID").get<uint64_t>(), true);
-				auto serialised = json.at("SerialisedObject");
-
-				// Get target with given UUID
-				Objects::AObject* parent = nullptr;
-				for (auto& obj : mProjectData.GlobalObjects) {
-					if (obj->GetUUID() == uuid) {
-						parent = obj.get();
-						break;
+				case RemoteProjectCommand::AddObject:
+				{
+					if (!json.contains("ParentUUID")) {
+						Log::Editor.Warn("No Parent UUID provided with command, ignoring message");
+						return;
 					}
-					parent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
-					if (parent) break;
-				}
-				if (!parent) {
-					for (auto& scene : mProjectData.Scenes) {
-						parent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
+					if (!json.contains("SerialisedObject")) {
+						Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
+						return;
+					}
+					auto uuid = UUID::FromExisting(json.at("ParentUUID").get<uint64_t>(), true);
+					auto serialised = json.at("SerialisedObject");
+
+					// Get target with given UUID
+					Objects::AObject* parent = nullptr;
+					for (auto& obj : mProjectData.GlobalObjects) {
+						if (obj->GetUUID() == uuid) {
+							parent = obj.get();
+							break;
+						}
+						parent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
 						if (parent) break;
 					}
-				}
-
-				// Ignore if no target found
-				if (!parent) break;
-
-				// Add new object
-				auto newObj = Utilities::ClassSerialiser::DeserialiseObject(serialised.dump());
-				newObj->mParent = parent;
-
-				Log::Editor.Info("Successfully added object " + uuid.AsString() + " from remote message");
-				break;
-			}
-			case RemoteProjectCommand::AddComponent:
-			{
-				if (!json.contains("ParentUUID")) {
-					Log::Editor.Warn("No Parent UUID provided with command, ignoring message");
-					return;
-				}
-				if (!json.contains("SerialisedComponent")) {
-					Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
-					return;
-				}
-				auto uuid = UUID::FromExisting(json.at("ParentUUID").get<uint64_t>(), true);
-				auto serialised = json.at("SerialisedComponent");
-
-				// Get target with given UUID
-				Objects::AObject* parent = nullptr;
-				for (auto& obj : mProjectData.GlobalObjects) {
-					if (obj->GetUUID() == uuid) {
-						parent = obj.get();
-						break;
+					if (!parent) {
+						for (auto& scene : mProjectData.Scenes) {
+							parent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
+							if (parent) break;
+						}
 					}
-					parent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
-					if (parent) break;
-				}
-				if (!parent) {
-					for (auto& scene : mProjectData.Scenes) {
-						parent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
-						if (parent) break;
-					}
-				}
 
-				// Ignore if no target found
-				if (!parent) break;
+					// Ignore if no target found
+					if (!parent) break;
 
-				// Add new component
-				auto newComp = Utilities::ClassSerialiser::DeserialiseComponent(serialised.dump());
-				newComp->mParent = parent;
+					// Add new object
+					auto newObj = Utilities::ClassSerialiser::DeserialiseObject(serialised.dump());
+					newObj->mParent = parent;
 
-				Log::Editor.Info("Successfully added component " + uuid.AsString() + " from remote message");
-				break;
-			}
-			case RemoteProjectCommand::UpdateObject:
-			{
-				if (!json.contains("UUID")) {
-					Log::Editor.Warn("No UUID provided with command, ignoring message");
-					return;
-				}
-				if (!json.contains("SerialisedObject")) {
-					Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
-					return;
-				}
-				auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
-				std::string serialised = json.at("SerialisedObject");
-
-				// Get target with given UUID
-				Objects::AObject* target = nullptr;
-				for (auto& obj : mProjectData.GlobalObjects) {
-					if (obj->GetUUID() == uuid) {
-						target = obj.get();
-						break;
-					}
-					target = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
-					if (target) break;
-				}
-				if (!target) {
-					for (auto& scene : mProjectData.Scenes) {
-						target = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
-						if (target) break;
-					}
-				}
-
-				// Ignore if no target found
-				if (!target) break;
-
-				// Update object
-				target->Deserialise(serialised);
-
-				Log::Editor.Info("Successfully updated object " + uuid.AsString() + " from remote message");
-				break;
-			}
-			case RemoteProjectCommand::UpdateComponent:
-			{
-				if (!json.contains("UUID")) {
-					Log::Editor.Warn("No UUID provided with command, ignoring message");
-					return;
-				}
-				if (!json.contains("SerialisedComponent")) {
-					Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
-					return;
-				}
-				auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
-				std::string serialised = json.at("SerialisedComponent");
-
-				// Get target with given UUID
-				Objects::AObject* targetParent = nullptr;
-				Components::AComponent* target = nullptr;
-				for (auto& obj : mProjectData.GlobalObjects) {
-					targetParent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
-					if (targetParent) break;
-				}
-				if (!target) {
-					for (auto& scene : mProjectData.Scenes) {
-						targetParent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
-						if (targetParent) break;
-					}
-				}
-
-				// Ignore if no target parent found (therefore component doesn't exist)
-				if (!targetParent) break;
-
-				for (auto& comp : *targetParent->GetComponents()) {
-					if (comp->GetUUID() != uuid) continue;
-					target = comp.get();
+					Log::Editor.Info("Successfully added object " + uuid.AsString() + " from remote message");
 					break;
 				}
+				case RemoteProjectCommand::AddComponent:
+				{
+					if (!json.contains("ParentUUID")) {
+						Log::Editor.Warn("No Parent UUID provided with command, ignoring message");
+						return;
+					}
+					if (!json.contains("SerialisedComponent")) {
+						Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
+						return;
+					}
+					auto uuid = UUID::FromExisting(json.at("ParentUUID").get<uint64_t>(), true);
+					auto serialised = json.at("SerialisedComponent");
 
-				// Update object
-				target->Deserialise(serialised);
+					// Get target with given UUID
+					Objects::AObject* parent = nullptr;
+					for (auto& obj : mProjectData.GlobalObjects) {
+						if (obj->GetUUID() == uuid) {
+							parent = obj.get();
+							break;
+						}
+						parent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
+						if (parent) break;
+					}
+					if (!parent) {
+						for (auto& scene : mProjectData.Scenes) {
+							parent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
+							if (parent) break;
+						}
+					}
 
-				Log::Editor.Info("Successfully updated component " + uuid.AsString() + " from remote message");
-				break;
-			}
-			case RemoteProjectCommand::RemoveInstance:
-			{
-				if (!json.contains("UUID")) {
-					Log::Editor.Warn("No UUID provided with command, ignoring message");
-					return;
+					// Ignore if no target found
+					if (!parent) break;
+
+					// Add new component
+					auto newComp = Utilities::ClassSerialiser::DeserialiseComponent(serialised.dump());
+					newComp->mParent = parent;
+
+					Log::Editor.Info("Successfully added component " + uuid.AsString() + " from remote message");
+					break;
 				}
-				auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
+				case RemoteProjectCommand::UpdateObject:
+				{
+					if (!json.contains("UUID")) {
+						Log::Editor.Warn("No UUID provided with command, ignoring message");
+						return;
+					}
+					if (!json.contains("SerialisedObject")) {
+						Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
+						return;
+					}
+					auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
+					std::string serialised = json.at("SerialisedObject");
 
-				// Get target with given UUID
-				Objects::AObject* target = nullptr;
-				for (size_t i = 0; i < mProjectData.GlobalObjects.size(); i++) {
-					auto& obj = mProjectData.GlobalObjects[i];
-					// Test if this object is the target
-					if (obj->GetUUID() == uuid) {
-						mProjectData.GlobalObjects.erase(std::next(mProjectData.GlobalObjects.begin(), i - 1));
+					// Get target with given UUID
+					Objects::AObject* target = nullptr;
+					for (auto& obj : mProjectData.GlobalObjects) {
+						if (obj->GetUUID() == uuid) {
+							target = obj.get();
+							break;
+						}
+						target = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
+						if (target) break;
+					}
+					if (!target) {
+						for (auto& scene : mProjectData.Scenes) {
+							target = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
+							if (target) break;
+						}
+					}
+
+					// Ignore if no target found
+					if (!target) break;
+
+					// Update object
+					target->Deserialise(serialised);
+
+					Log::Editor.Info("Successfully updated object " + uuid.AsString() + " from remote message");
+					break;
+				}
+				case RemoteProjectCommand::UpdateComponent:
+				{
+					if (!json.contains("UUID")) {
+						Log::Editor.Warn("No UUID provided with command, ignoring message");
+						return;
+					}
+					if (!json.contains("SerialisedComponent")) {
+						Log::Editor.Warn("No valid serialised data provided with command, ignoring message");
+						return;
+					}
+					auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
+					std::string serialised = json.at("SerialisedComponent");
+
+					// Get target with given UUID
+					Objects::AObject* targetParent = nullptr;
+					Components::AComponent* target = nullptr;
+					for (auto& obj : mProjectData.GlobalObjects) {
+						targetParent = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
+						if (targetParent) break;
+					}
+					if (!target) {
+						for (auto& scene : mProjectData.Scenes) {
+							targetParent = Objects::AObject::GetInstanceWithUUID(uuid, scene.get());
+							if (targetParent) break;
+						}
+					}
+
+					// Ignore if no target parent found (therefore component doesn't exist)
+					if (!targetParent) break;
+
+					for (auto& comp : *targetParent->GetComponents()) {
+						if (comp->GetUUID() != uuid) continue;
+						target = comp.get();
 						break;
 					}
-					// Test descendants
-					target = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
-					if (target) break;
-				}
 
-				if (!target) {
-					for (size_t i = 0; i < mProjectData.Scenes.size(); i++) {
-						auto& obj = mProjectData.Scenes[i];
+					// Update object
+					target->Deserialise(serialised);
+
+					Log::Editor.Info("Successfully updated component " + uuid.AsString() + " from remote message");
+					break;
+				}
+				case RemoteProjectCommand::RemoveInstance:
+				{
+					if (!json.contains("UUID")) {
+						Log::Editor.Warn("No UUID provided with command, ignoring message");
+						return;
+					}
+					auto uuid = UUID::FromExisting(json.at("UUID").get<uint64_t>(), true);
+
+					// Get target with given UUID
+					Objects::AObject* target = nullptr;
+					for (size_t i = 0; i < mProjectData.GlobalObjects.size(); i++) {
+						auto& obj = mProjectData.GlobalObjects[i];
 						// Test if this object is the target
 						if (obj->GetUUID() == uuid) {
-							mProjectData.Scenes.erase(std::next(mProjectData.Scenes.begin(), i - 1));
+							mProjectData.GlobalObjects.erase(std::next(mProjectData.GlobalObjects.begin(), i - 1));
 							break;
 						}
 						// Test descendants
 						target = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
 						if (target) break;
 					}
+
+					if (!target) {
+						for (size_t i = 0; i < mProjectData.Scenes.size(); i++) {
+							auto& obj = mProjectData.Scenes[i];
+							// Test if this object is the target
+							if (obj->GetUUID() == uuid) {
+								mProjectData.Scenes.erase(std::next(mProjectData.Scenes.begin(), i - 1));
+								break;
+							}
+							// Test descendants
+							target = Objects::AObject::GetInstanceWithUUID(uuid, obj.get());
+							if (target) break;
+						}
+					}
+
+					// Ignore if no target found
+					if (!target) break;
+
+					target->RemoveChild(uuid);
+
+					break;
 				}
-
-				// Ignore if no target found
-				if (!target) break;
-
-				target->RemoveChild(uuid);
-
-				break;
-			}
 			}
 		});
 	}

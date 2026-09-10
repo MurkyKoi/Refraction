@@ -14,7 +14,7 @@ namespace Refraction::Assets {
 		});
 	}
 
-	void ImageMetadata::Deserialise(std::string data) {
+	void ImageMetadata::Deserialise(const std::string data) {
 		AssetMetadata::Deserialise(data);
 		Utilities::ClassSerialiser::TryParseJSON(data, [&](nlohmann::json& json) {
 			if(json.contains("Width")) Width = json.at("Width").get<int>();
@@ -23,10 +23,10 @@ namespace Refraction::Assets {
 		});
 	}
 
-	Image::~Image() {}
+	Image::~Image() = default;
 
-	void Image::OnLoadAsset(Common::Shared<AssetMetadata> metadata) {
-		auto meta = Common::AsA<ImageMetadata>(metadata);
+	void Image::OnLoadAsset(const Common::Shared<AssetMetadata> metadata) {
+		const auto meta = Common::AsA<ImageMetadata>(metadata);
 		if (!meta) {
 			Log::SError("Metadata cast failed");
 			return;
@@ -34,8 +34,8 @@ namespace Refraction::Assets {
 
 		mTexture = Engine::Platform::ATexture::FromPath(meta->AssetPath);
 		if (mTexture.expired()) throw Common::RuntimeError("Failed to generate texture from path");
-		auto dim = mTexture.lock()->GetSize();
-		meta->Width = (int)dim.x;
-		meta->Height = (int)dim.y;
+		const auto dim = mTexture.lock()->GetSize();
+		meta->Width = static_cast<int>(dim.x);
+		meta->Height = static_cast<int>(dim.y);
 	}
 }

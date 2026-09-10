@@ -20,18 +20,18 @@ namespace Refraction::Utilities {
 	class ClassSerialiser {
 	public:
 		// Tries to parse a JSON dump, handles JSON errors
-		static void TryParseJSON(std::string dump, std::function<void(nlohmann::json&)> fn);
+		static void TryParseJSON(const std::string &dump, const std::function<void(nlohmann::json &)> &fn);
 		// Appends to a parsed JSON dump, handles JSON errors
-		static std::string TryAppendJSON(std::string dump, std::function<void(nlohmann::json&)> fn);
+		static std::string TryAppendJSON(std::string dump, const std::function<void(nlohmann::json&)> &fn);
 		// Appends to a JSON object, handles JSON errors
-		static nlohmann::json AppendJSON(nlohmann::json json, std::function<void(nlohmann::json&)> fn);
+		static nlohmann::json AppendJSON(nlohmann::json jsonObj, const std::function<void(nlohmann::json&)>& fn);
 
-		static nlohmann::json Serialise(Common::Shared<Assets::Asset> asset);
-		static nlohmann::json Serialise(Common::Shared<Objects::AObject> object);
-		static nlohmann::json Serialise(Common::Shared<Components::AComponent> comp);
-		static Common::Shared<Assets::Asset> DeserialiseAsset(Common::Shared<Assets::AssetMetadata> metadata);
-		static Common::Shared<Objects::AObject> DeserialiseObject(std::string serialisedData);
-		static Common::Shared<Components::AComponent> DeserialiseComponent(std::string serialisedData);
+		static nlohmann::json Serialise(const Common::Shared<Assets::Asset> &asset);
+		static nlohmann::json Serialise(const Common::Shared<Objects::AObject>& object);
+		static nlohmann::json Serialise(const Common::Shared<Components::AComponent>& comp);
+		static Common::Shared<Assets::Asset> DeserialiseAsset(const Common::Shared<Assets::AssetMetadata>& metadata);
+		static Common::Shared<Objects::AObject> DeserialiseObject(const std::string &serialisedData);
+		static Common::Shared<Components::AComponent> DeserialiseComponent(const std::string &serialisedData);
 
 		template<typename ObjectType>
 		static Common::Shared<ObjectType> DeserialiseObject(std::string serialisedData) {

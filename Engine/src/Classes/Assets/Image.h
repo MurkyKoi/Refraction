@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <Classes/ClassFactory.h>
 #include <Platform/ATexture.h>
 
 #include "Asset.h"
@@ -17,18 +18,20 @@ namespace Refraction::Assets {
 		std::string Type = RFCT_TEXTURE_TYPE_DIFFUSE;
 
 		ImageMetadata() = default;
-		~ImageMetadata() = default;
+		~ImageMetadata() override = default;
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string data) override;
 	};
 
-	class Image : public Asset {
+	class Image : public Engine::ISerialisable<Image, Asset> {
 	public:
+		static constexpr std::string SerialisedTypeName = "ImageAsset";
+
 		Common::Ref<Engine::Platform::ATexture> mTexture = {};
 
 		Image() = default;
-		virtual ~Image();
+		~Image() override;
 
 		MetadataType GetMetadataType() override { return MetadataType::Image; }
 	protected:
@@ -36,4 +39,6 @@ namespace Refraction::Assets {
 	private:
 		unsigned int mID = 0;
 	};
+
+	RFCT_ASSET_REGISTERFACTORY(Image, Asset)
 }

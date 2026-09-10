@@ -1,6 +1,7 @@
 #include <json.hpp>
 
 #include <Classes/ClassHeaders.h>
+#include <Classes/ISerialisable.h>
 #include <Interface/AssetManager.h>
 
 #include "ClassSerialiser.h"
@@ -8,7 +9,7 @@
 using nlohmann::json;
 
 namespace Refraction::Utilities {
-	void ClassSerialiser::TryParseJSON(std::string dump, std::function<void(json&)> fn) {
+	void ClassSerialiser::TryParseJSON(const std::string& dump, const std::function<void(json&)>& fn) {
 		try {
 			json data = json::parse(dump);
 			fn(data);
@@ -21,7 +22,7 @@ namespace Refraction::Utilities {
 		}
 	}
 
-	std::string ClassSerialiser::TryAppendJSON(std::string dump, std::function<void(json&)> fn) {
+	std::string ClassSerialiser::TryAppendJSON(std::string dump, const std::function<void(json&)> &fn) {
 		// Replace empty string with empty json to prevent errors
 		if (dump.empty()) dump = "{}";
 		std::string result;
@@ -32,9 +33,9 @@ namespace Refraction::Utilities {
 		return result;
 	}
 
-	nlohmann::json ClassSerialiser::AppendJSON(nlohmann::json json, std::function<void(nlohmann::json&)> fn) {
+	json ClassSerialiser::AppendJSON(json jsonObj, const std::function<void(json&)>& fn) {
 		try {
-			fn(json);
+			fn(jsonObj);
 		} catch (const json::parse_error& err) {
 			throw Common::RuntimeError("JSON Parse Error: " + std::string(err.what()));
 		} catch (const json::out_of_range& err) {
@@ -42,82 +43,54 @@ namespace Refraction::Utilities {
 		} catch (const json::exception& err) {
 			throw Common::RuntimeError("JSON Error: " + std::string(err.what()));
 		}
-		return json;
+		return jsonObj;
 	}
 
-	nlohmann::json ClassSerialiser::Serialise(Common::Shared<Assets::Asset> asset) {
+	json ClassSerialiser::Serialise(const Common::Shared<Assets::Asset> &asset) {
 		Common::Ref<Assets::AssetMetadata> metaWeak;
-		Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> assetManager) {
+		Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
 			metaWeak = assetManager->FetchMetadata(asset->GetUUID());
 		});
-		if (auto meta = metaWeak.lock()) {
+		if (const auto meta = metaWeak.lock()) {
 			return meta->Serialise();
 		} else throw Common::RuntimeError("Failed to fetch metadata to serialise");
 	}
-	nlohmann::json ClassSerialiser::Serialise(Common::Shared<Objects::AObject> object) {
+	json ClassSerialiser::Serialise(const Common::Shared<Objects::AObject>& object) {
 		return object->Serialise();
 	}
 
-	nlohmann::json ClassSerialiser::Serialise(Common::Shared<Components::AComponent> component) {
-		return component->Serialise();
+	json ClassSerialiser::Serialise(const Common::Shared<Components::AComponent>& comp) {
+		return comp->Serialise();
 	}
 
-	Common::Shared<Assets::Asset> ClassSerialiser::DeserialiseAsset(Common::Shared<Assets::AssetMetadata> metadata) {
-		Common::Shared<Assets::Asset> deserialised;
-		if (metadata->AssetType == typeid(Assets::Asset).name()) {
-			deserialised = Common::NewShared<Assets::Asset>();
-		} else if (metadata->AssetType == typeid(Assets::Image).name()) {
-			deserialised = Common::NewShared<Assets::Image>();
-		} else if (metadata->AssetType == typeid(Assets::Model).name()) {
-			deserialised = Common::NewShared<Assets::Model>();
-		} else if (metadata->AssetType == typeid(Assets::Shader).name()) {
-			deserialised = Common::NewShared<Assets::Shader>();
-		} else if (metadata->AssetType == typeid(Assets::Material).name()) {
-			deserialised = Common::NewShared<Assets::Material>();
-		} else if (metadata->AssetType == typeid(Assets::Assembly).name()) {
-			deserialised = Common::NewShared<Assets::Assembly>();
-		}
-
+	Common::Shared<Assets::Asset> ClassSerialiser::DeserialiseAsset(const Common::Shared<Assets::AssetMetadata>& metadata) {
+		Common::Shared<Assets::Asset> deserialised = Engine::ClassFactory::CreateAsset(metadata->AssetType);
 		Log::SInfo("Loading asset of type " + metadata->AssetType);
 		deserialised->LoadAsset(metadata->AssetUUID);
 		return deserialised;
 	}
 
-	Common::Shared<Objects::AObject> ClassSerialiser::DeserialiseObject(std::string serialisedData) {
-		Common::Shared<Objects::AObject> deserialised;
+	Common::Shared<Objects::AObject> ClassSerialiser::DeserialiseObject(const std::string& serialisedData) {
+		std::string objectClassName;
 		TryParseJSON(serialisedData, [&](nlohmann::json& data) {
-			auto className = data.at("TypeName").get<std::string>();
-			if (className == typeid(Objects::AObject).name()) {
-				deserialised = Common::NewShared<Objects::AObject>();
-			} else if (className == typeid(Objects::BasicObject).name()) {
-				deserialised = Common::NewShared<Objects::BasicObject>();
-			} else if (className == typeid(Objects::SceneRoot).name()) {
-				deserialised = Common::NewShared<Objects::SceneRoot>();
-			} else if (className == typeid(Objects::Camera).name()) {
-				deserialised = Common::NewShared<Objects::Camera>();
-			}
-
-			Log::SInfo("Deserialising object of type " + className);
-			deserialised->Deserialise(serialisedData);
+			objectClassName = data.at("TypeName").get<std::string>();
 		});
+
+		Common::Shared<Objects::AObject> deserialised = Engine::ClassFactory::CreateObject(objectClassName);
+		Log::SInfo("Deserialising object of type " + objectClassName);
+		deserialised->Deserialise(serialisedData);
 		return deserialised;
 	}
 
-	Common::Shared<Components::AComponent> ClassSerialiser::DeserialiseComponent(std::string serialisedData) {
-		Common::Shared<Components::AComponent> deserialised;
+	Common::Shared<Components::AComponent> ClassSerialiser::DeserialiseComponent(const std::string& serialisedData) {
+		std::string compClassName;
 		TryParseJSON(serialisedData, [&](nlohmann::json& data) {
-			auto className = data.at("TypeName").get<std::string>();
-			if (className == typeid(Components::AComponent).name()) {
-				deserialised = Common::NewShared<Components::AComponent>();
-			} else if (className == typeid(Components::APhysics).name()) {
-				deserialised = Common::NewShared<Components::APhysics>();
-			} else if (className == typeid(Components::Mesh).name()) {
-				deserialised = Common::NewShared<Components::Mesh>();
-			}
-
-			Log::SInfo("Deserialising component of type " + className);
-			deserialised->Deserialise(serialisedData);
+			compClassName = data.at("TypeName").get<std::string>();
 		});
+
+		Common::Shared<Components::AComponent> deserialised = Engine::ClassFactory::CreateComponent(compClassName);
+		Log::SInfo("Deserialising component of type " + compClassName);
+		deserialised->Deserialise(serialisedData);
 		return deserialised;
 	}
 

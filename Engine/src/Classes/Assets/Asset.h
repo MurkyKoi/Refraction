@@ -1,13 +1,12 @@
 #pragma once
 
 #include <string>
-#include <map>
 
 #include <json.hpp>
 
 #include <Core/Common.h>
 #include <Core/UUID.h>
-#include <Core/FileHandling.h>
+#include <Classes/ISerialisable.h>
 
 #define RFCT_ASSET_METADATA_EXTENSION ".rfmeta"
 
@@ -32,17 +31,17 @@ namespace Refraction::Assets {
 		MetadataType MetaType = MetadataType::Asset;
 		std::filesystem::path SourcePath = ""; // Path to the original source file
 		std::filesystem::path AssetPath = ""; // Path to the actual asset file in the project
-		std::string AssetType = "";
+		std::string AssetType;
 		uintmax_t FileSize = 0;
 
 		// Returns a deserialised (derived) AssetMetadata object
 		static Common::Shared<AssetMetadata> CastedDeserialise(const std::string &data);
 
 		AssetMetadata() = default;
-		~AssetMetadata() = default;
+		virtual ~AssetMetadata() = default;
 
 		// Returns path to the metadata file
-		std::filesystem::path GetPath() const;
+		[[nodiscard]] std::filesystem::path GetPath() const;
 
 		// Serialises metadata into a string
 		virtual nlohmann::json Serialise();
@@ -65,9 +64,11 @@ namespace Refraction::Assets {
 
 		virtual MetadataType GetMetadataType() { return MetadataType::Asset; }
 
-		inline bool IsVolatile() const { return mVolatile; }
-		inline UUIDValue GetUUID() const { return mUUID; }
+		[[nodiscard]] inline bool IsVolatile() const { return mVolatile; }
+		[[nodiscard]] inline UUIDValue GetUUID() const { return mUUID; }
 	protected:
+		std::string SerialisedTypeName = "BaseAsset";
+
 		std::string mDisplayName;
 		// Asset does not have a location on disk if true
 		bool mVolatile = false;
@@ -77,7 +78,7 @@ namespace Refraction::Assets {
 		// DERIVED METHOD: Re-initialise asset when made volatile
 		virtual void OnMakeVolatile() {}
 		// DERIVED METHOD: Save any changes to disk
-		void OnSave() {}
+		virtual void OnSave() {}
 	private:
 		UUIDValue mUUID = 0;
 	};

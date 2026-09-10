@@ -7,15 +7,16 @@
 
 #include <Math/Vector.h>
 #include <Math/Matrix.h>
+#include "Classes/ClassFactory.h"
 
 #include "Asset.h"
 
 namespace Refraction::Assets {
-	struct ShaderMetadata : public AssetMetadata {
+	struct ShaderMetadata : AssetMetadata {
 		size_t ProgramCount = 0;
 
 		ShaderMetadata() = default;
-		~ShaderMetadata() = default;
+		~ShaderMetadata() override = default;
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string data) override;
@@ -24,7 +25,7 @@ namespace Refraction::Assets {
 	class Shader : public Asset {
 	public:
 		Shader() = default;
-		virtual ~Shader();
+		~Shader() override;
 
 		void Activate() const;
 
@@ -39,8 +40,9 @@ namespace Refraction::Assets {
 		void SetUniformMat3(const std::string& name, Math::Matrix3 matrix) const;
 		void SetUniformMat4(const std::string& name, Math::Matrix4 matrix) const;
 
-		std::string GetName() const { return mName; };
+		[[nodiscard]] std::string GetName() const { return mName; };
 
+		std::string GetSerialisedType() override { return "ShaderAsset"; }
 		MetadataType GetMetadataType() override { return MetadataType::Shader; }
 	protected:
 		void OnLoadAsset(Common::Shared<AssetMetadata> metadata) override;
@@ -50,6 +52,8 @@ namespace Refraction::Assets {
 		unsigned int mID = 0;
 		std::string mName;
 
-		bool CheckLogErrors(GLuint shader, const std::string type);
+		bool CheckLogErrors(GLuint shader, std::string type);
 	};
+
+	RFCT_ASSET_REGISTERFACTORY(Shader)
 }

@@ -8,13 +8,15 @@ namespace Refraction::Assets {
 	class Assembly : public Asset {
 	public:
 		// Returns a new copy of the assembly
-		Common::Shared<Objects::AObject> Get();
+		Common::Shared<Objects::AObject> Get() const;
 
+		std::string GetSerialisedType() override { return "Assembly"; }
 	private:
 		// Serialises an object tree
-		std::string Serialise(Common::Shared<Objects::AObject> root);
+		static std::string Serialise(const Common::Shared<Objects::AObject> &root);
 		// Deserialises into a tree of objects
-		Common::Shared<Objects::AObject> Deserialise(std::string tree);
+		static Common::Shared<Objects::AObject> Deserialise(const std::string& tree);
 	};
 
+	RFCT_ASSET_REGISTERFACTORY(Assembly)
 }

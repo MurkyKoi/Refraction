@@ -16,12 +16,16 @@ namespace Refraction::Objects {
 		Camera();
 
 		void ProcessInput(Math::Vector3 dirInput, Math::Vector3 angInput);
-		Math::Matrix4 GetViewMatrix() const { return Math::Matrix4::LookAt(mTransform.GetWorldPosition(), mCameraTarget, mTransform.GetUpVector()); };
+		[[nodiscard]] Math::Matrix4 GetViewMatrix() const { return Math::Matrix4::LookAt(mTransform.GetWorldPosition(), mCameraTarget, mTransform.GetUpVector()); };
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string serialised) override;
+
+		std::string GetSerialisedType() override { return "Camera"; }
 	private:
 		Math::Vector3 mCameraTarget = Math::Vector3::Front();
 		float mPitch = 0, mYaw = 0;
 	};
+
+	RFCT_OBJECT_REGISTERFACTORY(Camera)
 }

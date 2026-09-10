@@ -25,6 +25,9 @@ namespace Refraction::Components {
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string serialised) override;
-	private:
+
+		std::string GetSerialisedType() override { return "MeshComponent"; }
 	};
+
+	RFCT_COMPONENT_REGISTERFACTORY(Mesh)
 }

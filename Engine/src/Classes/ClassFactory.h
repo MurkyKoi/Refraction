@@ -1,29 +1,27 @@
 #pragma once
 
 #include <Core/Singleton.h>
-#include <Classes/ISerialisable.h>
 
-#define RFCT_ASSET_REGISTERFACTORY(ClassName, ParentClassName) \
+#include "ISerialisable.h"
+
+#define RFCT_ASSET_REGISTERFACTORY(AssetType) \
 	namespace { \
-		bool ClassName##_registered = Engine::ClassFactory::RegisterAsset<ClassName, ParentClassName>( \
-			ClassName::GetSerialisedType(), [] { \
-			return Common::NewShared<ClassName>(); \
+		bool AssetType##_registered = Engine::ClassFactory::RegisterAsset<AssetType>([] { \
+			return Common::NewShared<AssetType>(); \
 		}); \
 	}
 
-#define RFCT_OBJECT_REGISTERFACTORY(ClassName, ParentClassName) \
+#define RFCT_OBJECT_REGISTERFACTORY(ObjectType) \
 	namespace { \
-		bool ClassName##_registered = Engine::ClassFactory::RegisterObject<ClassName, ParentClassName>( \
-			ClassName::GetSerialisedType(), [] { \
-			return Common::NewShared<ClassName>(); \
+		bool ObjectType##_registered = Engine::ClassFactory::RegisterObject<ObjectType>([] { \
+			return Common::NewShared<ObjectType>(); \
 		}); \
 	}
 
-#define RFCT_COMPONENT_REGISTERFACTORY(ClassName, ParentClassName) \
+#define RFCT_COMPONENT_REGISTERFACTORY(ComponentType) \
 	namespace { \
-		bool ClassName##_registered = Engine::ClassFactory::RegisterComponent<ClassName, ParentClassName>( \
-			ClassName::GetSerialisedType(), [] { \
-			return Common::NewShared<ClassName>(); \
+		bool ComponentType##_registered = Engine::ClassFactory::RegisterComponent<ComponentType>([] { \
+			return Common::NewShared<ComponentType>(); \
 		}); \
 	}
 
@@ -31,17 +29,31 @@ namespace Refraction::Assets { class Asset; }
 namespace Refraction::Objects { class AObject; }
 namespace Refraction::Components { class AComponent; }
 
+
 namespace Refraction::Engine {
+	template<typename T>
+	concept IsSerialisable = std::is_base_of_v<ISerialisable, T>;
+
     class ClassFactory : Singleton<ClassFactory> {
     public:
     	typedef std::function<Common::Shared<Assets::Asset>()> AssetCtor;
     	typedef std::function<Common::Shared<Objects::AObject>()> ObjectCtor;
     	typedef std::function<Common::Shared<Components::AComponent>()> ComponentCtor;
 
-    	template<typename ClassName, typename ParentClassName>
-    	static bool RegisterAsset(const std::string& metatype, const AssetCtor &ctor) {
-    		static_assert(std::is_base_of_v<ISerialisable<ClassName, ParentClassName>, ClassName>, "Class does not inherit from ISerialisable.");
-    		GetAssetFactoryRegistry()[metatype] = ctor;
+    	template<typename Type>
+    	static std::string FindSerialisedTypeName() {
+    		const auto key = typeid(Type).name();
+		    if (const auto& registry = GetSerialisedNameRegistry(); registry.contains(key)) {
+		    	return registry.at(key);
+    		}
+    		return "";
+    	}
+
+    	template<typename AssetType> requires(IsSerialisable<AssetType>)
+    	static bool RegisterAsset(const AssetCtor &ctor) {
+    		auto temp = AssetType();
+    		GetAssetFactoryRegistry()[temp.GetSerialisedType()] = ctor;
+    		GetSerialisedNameRegistry()[typeid(AssetType).name()] = temp.GetSerialisedType();
     		return true;
     	}
 
@@ -51,10 +63,11 @@ namespace Refraction::Engine {
     		return nullptr;
     	}
 
-    	template<typename ClassName, typename ParentClassName>
-    	static bool RegisterObject(const std::string& metatype, const ObjectCtor &ctor) {
-    		static_assert(std::is_base_of_v<ISerialisable<ClassName, ParentClassName>, ClassName>, "Class does not inherit from ISerialisable.");
-    		GetObjectFactoryRegistry()[metatype] = ctor;
+    	template<typename ObjectType> requires(IsSerialisable<ObjectType>)
+    	static bool RegisterObject(const ObjectCtor &ctor) {
+    		auto temp = ObjectType();
+    		GetObjectFactoryRegistry()[temp.GetSerialisedType()] = ctor;
+    		GetSerialisedNameRegistry()[typeid(ObjectType).name()] = temp.GetSerialisedType();
     		return true;
     	}
 
@@ -64,10 +77,11 @@ namespace Refraction::Engine {
     		return nullptr;
     	}
 
-    	template<typename ClassName, typename ParentClassName>
-    	static bool RegisterComponent(const std::string& metatype, const ComponentCtor &ctor) {
-    		static_assert(std::is_base_of_v<ISerialisable<ClassName, ParentClassName>, ClassName>, "Class does not inherit from ISerialisable.");
-    		GetComponentFactoryRegistry()[metatype] = ctor;
+    	template<typename ComponentType> requires(IsSerialisable<ComponentType>)
+    	static bool RegisterComponent(const ComponentCtor &ctor) {
+    		auto temp = ComponentType();
+    		GetComponentFactoryRegistry()[temp.GetSerialisedType()] = ctor;
+    		GetSerialisedNameRegistry()[typeid(ComponentType).name()] = temp.GetSerialisedType();
     		return true;
     	}
 
@@ -77,6 +91,11 @@ namespace Refraction::Engine {
     		return nullptr;
     	}
     private:
+    	// Stores `[typeid(type).name()] = typeObj.GetSerialisedType()`
+    	static std::unordered_map<std::string, std::string>& GetSerialisedNameRegistry() {
+    		static std::unordered_map<std::string, std::string> instance;
+    		return instance;
+    	}
     	static std::unordered_map<std::string, AssetCtor>& GetAssetFactoryRegistry() {
     		static std::unordered_map<std::string, AssetCtor> instance;
     		return instance;

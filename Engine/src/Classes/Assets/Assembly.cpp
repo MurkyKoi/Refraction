@@ -9,22 +9,22 @@
 using nlohmann::json;
 
 namespace Refraction::Assets {
-	Common::Shared<Objects::AObject> Assembly::Get() {
+	Common::Shared<Objects::AObject> Assembly::Get() const {
 		Common::Ref<AssetMetadata> metaWeak;
-		Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> assetManager) {
+		Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
 			metaWeak = assetManager->FetchMetadata(GetUUID());
 		});
-		if (auto meta = metaWeak.lock()) {
+		if (const auto meta = metaWeak.lock()) {
 			return Deserialise(FileHandling::ReadFile(meta->AssetPath));
 		}
 		return nullptr;
 	}
 
-	std::string Assembly::Serialise(Common::Shared<Objects::AObject> root) {
+	std::string Assembly::Serialise(const Common::Shared<Objects::AObject>& root) {
 		return root->Serialise();
 	}
 
-	Common::Shared<Objects::AObject> Assembly::Deserialise(std::string tree) {
+	Common::Shared<Objects::AObject> Assembly::Deserialise(const std::string& tree) {
 		return Utilities::ClassSerialiser::DeserialiseObject(tree);
 	}
 }

@@ -7,8 +7,8 @@
 
 
 namespace Refraction::Objects {
-	AObject* AObject::GetInstanceWithUUID(UUID target, AObject* parent) {
-		for (auto& comp : *parent->GetComponents()) {
+	AObject* AObject::GetInstanceWithUUID(const UUID& target, AObject* parent) {
+		for (const auto& comp : *parent->GetComponents()) {
 			if (comp->GetUUID() == target) return parent;
 		}
 		AObject* obj = nullptr;
@@ -26,13 +26,13 @@ namespace Refraction::Objects {
 
 		// Deep copy components and children
 		for (auto& comp : object.mComponents) {
-			Common::Shared<Components::AComponent> newComp(new Components::AComponent(*comp));
+			Common::Shared<Components::AComponent> newComp = Common::NewShared<Components::AComponent>(*comp);
 			newComp->mParent = this;
 			mComponents.push_back(newComp);
 		}
 
 		for (auto& child : object.mChildren) {
-			Common::Shared<AObject> newChild(new AObject(*child));
+			Common::Shared<AObject> newChild = Common::NewShared<AObject>(*child);
 			newChild->mParent = this;
 			mChildren.push_back(newChild);
 		}
@@ -42,27 +42,27 @@ namespace Refraction::Objects {
 		mUUID.Reset();
 	}
 
-	Common::Shared<AObject> AObject::GetFirstChild(std::string name) {
+	Common::Shared<AObject> AObject::GetFirstChild(const std::string& name) {
 		for (auto& obj : mChildren) {
 			if (obj->mInstanceName == name) return obj;
 		}
 		return nullptr;
 	}
 
-	void AObject::AddChild(Common::Shared<AObject> child) {
+	void AObject::AddChild(const Common::Shared<AObject>& child) {
 		if (child->mParent == this) return; // Child is already parented to this object
 		child->mParent = this;
 		mChildren.push_back(child);
 	}
 
-	void AObject::Remove() {
+	void AObject::Remove() const {
 		if (!mParent) return;
 		mParent->RemoveChild(mUUID);
 	}
 
-	void AObject::RemoveChild(UUID target) {
+	void AObject::RemoveChild(const UUID& target) {
 		for (size_t i = 0; i < mChildren.size(); i++) {
-			auto& child = mChildren[i];
+			const auto& child = mChildren[i];
 			if (child->GetUUID() != target) continue;
 			child->mParent = nullptr;
 			mChildren.erase(std::next(mChildren.begin(), i));
@@ -71,7 +71,7 @@ namespace Refraction::Objects {
 
 		// It isn't a child object, try components
 		for (size_t i = 0; i < mComponents.size(); i++) {
-			auto& comp = mComponents[i];
+			const auto& comp = mComponents[i];
 			if (comp->GetUUID() != target) continue;
 			comp->mParent = nullptr;
 			mComponents.erase(std::next(mComponents.begin(), i));
@@ -81,24 +81,23 @@ namespace Refraction::Objects {
 		// Well it isn't a child component either. Get mad at the caller.
 	}
 
-	Common::Shared<AObject> AObject::Clone() {
-		return Common::Shared<AObject>(new AObject(*this));
+	Common::Shared<AObject> AObject::Clone() const {
+		return Common::NewShared<AObject>(*this);
 	}
 
 	nlohmann::json AObject::Serialise() {
 		return Utilities::ClassSerialiser::AppendJSON({}, [&](nlohmann::json& json) {
+			json["SerialisedType"] = GetSerialisedType();
 			json["UUID"] = mUUID.Serialise();
-			json["TypeName"] = typeid(*this).name();
-			Log::SInfo("Serialising as " + std::string(typeid(*this).name()));
 			json["ClassName"] = mClassName;
 			json["InstanceName"] = mInstanceName;
 			json["Transform"] = Utilities::ClassSerialiser::Serialise(mTransform);
 			json["Components"] = {};
-			for (auto& comp : mComponents) {
+			for (const auto& comp : mComponents) {
 				json["Components"][comp->GetUUID().Serialise()] = comp->Serialise();
 			}
 			json["Children"] = {};
-			for (auto& child : mChildren) {
+			for (const auto& child : mChildren) {
 				json["Children"][child->GetUUID().Serialise()] = child->Serialise();
 			}
 
@@ -128,7 +127,7 @@ namespace Refraction::Objects {
 		});
 	}
 
-	Math::Transform AObject::GetWorldTransform() {
+	Math::Transform AObject::GetWorldTransform() const {
 		auto transform = mTransform;
 		if (mParent) {
 			auto result = mTransform.ToMatrix() * mParent->GetWorldTransform().ToMatrix();

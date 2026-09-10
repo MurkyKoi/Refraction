@@ -10,6 +10,6 @@ namespace Refraction::Engine {
 		AssetImporter() = default;
 		~AssetImporter() = default;
 
-		static UUIDValue Import(std::filesystem::path sourcePath);
+		static UUIDValue Import(const std::filesystem::path &sourcePath);
 	};
 }

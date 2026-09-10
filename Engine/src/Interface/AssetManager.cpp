@@ -48,11 +48,10 @@ namespace Refraction::Engine {
 	}
 
 	std::optional<std::filesystem::path> AssetManager::GetMetadataPath(std::filesystem::path assetPath) const {
-		auto assetName = assetPath.filename().string();
+		const auto assetName = assetPath.filename().string();
 		// Make sure it's a full path before searching it
 		if (assetPath.string().find(mProjectPath.string()) == std::string::npos) assetPath = mProjectPath / "Assets" / assetPath;
-		auto files = FileHandling::GetFilesOfExtInFolder(assetPath.parent_path(), RFCT_ASSET_METADATA_EXTENSION);
-		for (auto& file : files) {
+		for (const auto files = FileHandling::GetFilesOfExtInFolder(assetPath.parent_path(), RFCT_ASSET_METADATA_EXTENSION); auto& file : files) {
 			if (file.path().filename().string() == assetName) return std::make_optional(file.path());
 		}
 		return std::nullopt;

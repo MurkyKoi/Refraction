@@ -19,6 +19,8 @@ namespace Refraction::Objects {
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string serialised) override;
+
+		std::string GetSerialisedType() override { return "SceneRoot"; }
 	private:
 		void PreTick(AObject* object);
 		void Tick(AObject* object);
@@ -27,4 +29,6 @@ namespace Refraction::Objects {
 		void Render(AObject* object);
 		void PostRender(AObject* object);
 	};
+
+	RFCT_OBJECT_REGISTERFACTORY(SceneRoot)
 }

@@ -34,13 +34,13 @@ namespace Refraction::Utilities {
 		static Common::Shared<Components::AComponent> DeserialiseComponent(const std::string &serialisedData);
 
 		template<typename ObjectType>
-		static Common::Shared<ObjectType> DeserialiseObject(std::string serialisedData) {
-			auto obj = DeserialiseObject(serialisedData);
+		static Common::Shared<ObjectType> DeserialiseObject(const std::string& serialisedData) {
+			const auto obj = DeserialiseObject(serialisedData);
 			return dynamic_pointer_cast<ObjectType>(obj);
 		}
 		template<typename ComponentType>
-		static Common::Shared<ComponentType> DeserialiseComponent(std::string serialisedData) {
-			auto comp = DeserialiseComponent(serialisedData);
+		static Common::Shared<ComponentType> DeserialiseComponent(const std::string& serialisedData) {
+			const auto comp = DeserialiseComponent(serialisedData);
 			return dynamic_pointer_cast<ComponentType>(comp);
 		}
 
@@ -51,23 +51,23 @@ namespace Refraction::Utilities {
 		static nlohmann::json Serialise(Math::Orientation orient);
 		static nlohmann::json Serialise(Math::Rect rect);
 		static nlohmann::json Serialise(Math::Frustum frustum);
-		static nlohmann::json Serialise(Math::Transform transform);
+		static nlohmann::json Serialise(const Math::Transform& transform);
 		static Math::Vector2 DeserialiseVector2(nlohmann::json data);
-		static Math::Vector2 DeserialiseVector2(std::string serialisedData);
+		static Math::Vector2 DeserialiseVector2(const std::string& serialisedData);
 		static Math::Vector3 DeserialiseVector3(nlohmann::json data);
-		static Math::Vector3 DeserialiseVector3(std::string serialisedData);
+		static Math::Vector3 DeserialiseVector3(const std::string& serialisedData);
 		static Math::Vector4 DeserialiseVector4(nlohmann::json data);
-		static Math::Vector4 DeserialiseVector4(std::string serialisedData);
+		static Math::Vector4 DeserialiseVector4(const std::string& serialisedData);
 		static Math::Quaternion DeserialiseQuaternion(nlohmann::json data);
-		static Math::Quaternion DeserialiseQuaternion(std::string serialisedData);
+		static Math::Quaternion DeserialiseQuaternion(const std::string& serialisedData);
 		static Math::Orientation DeserialiseOrientation(nlohmann::json data);
-		static Math::Orientation DeserialiseOrientation(std::string serialisedData);
+		static Math::Orientation DeserialiseOrientation(const std::string& serialisedData);
 		static Math::Rect DeserialiseRect(nlohmann::json data);
-		static Math::Rect DeserialiseRect(std::string serialisedData);
+		static Math::Rect DeserialiseRect(const std::string& serialisedData);
 		static Math::Frustum DeserialiseFrustum(nlohmann::json data);
-		static Math::Frustum DeserialiseFrustum(std::string serialisedData);
+		static Math::Frustum DeserialiseFrustum(const std::string& serialisedData);
 		static Math::Transform DeserialiseTransform(nlohmann::json data);
-		static Math::Transform DeserialiseTransform(std::string serialisedData);
+		static Math::Transform DeserialiseTransform(const std::string& serialisedData);
 	};
 }
 

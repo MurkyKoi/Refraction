@@ -9,13 +9,13 @@
 #include "Model.h"
 
 namespace Refraction::Assets {
-	void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, aiNode* node, const aiScene* scene);
-	Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, aiMesh* mesh, const aiScene* scene);
-	std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(std::string& sourcePath, aiMaterial* mat, aiTextureType type, std::string typeName);
+	static void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene);
+	static Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, const std::vector<Common::Ref<Assets::Material>>& materials, const aiMesh* mesh, const aiScene* scene);
+	static std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(const std::string& sourcePath, const aiMaterial* mat, aiTextureType type, const std::string& typeName);
 
-	void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, aiNode* node, const aiScene* scene) {
+	void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene) {
 		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 			fragments.push_back(ProcessMesh(sourcePath, materials, mesh, scene));
 		}
 
@@ -24,7 +24,7 @@ namespace Refraction::Assets {
 		}
 	}
 
-	Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, aiMesh* mesh, const aiScene* scene) {
+	Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, const std::vector<Common::Ref<Assets::Material>>& materials, const aiMesh* mesh, const aiScene* scene) {
 		std::vector<Engine::sVertex> vertices;
 		std::vector<unsigned int> indices;
 		std::vector<Common::Shared<Assets::Image>> diffuseMaps;
@@ -33,14 +33,14 @@ namespace Refraction::Assets {
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 			Engine::sVertex vertex;
 
-			aiVector3D importPos = mesh->mVertices[i];
+			const aiVector3D importPos = mesh->mVertices[i];
 			vertex.pos = Math::Vector3(importPos.x, importPos.y, importPos.z);
 
-			aiVector3D importNormal = mesh->mNormals[i];
+			const aiVector3D importNormal = mesh->mNormals[i];
 			vertex.normal = Math::Vector3(importNormal.x, importNormal.y, importNormal.z);
 
 			if (mesh->HasTextureCoords(0)) {
-				aiVector3D importTexCoord = mesh->mTextureCoords[0][i];
+				const aiVector3D importTexCoord = mesh->mTextureCoords[0][i];
 				vertex.texCoord = Math::Vector2(importTexCoord.x, importTexCoord.y);
 			} else
 				vertex.texCoord = Math::Vector2(0.0f);
@@ -50,7 +50,7 @@ namespace Refraction::Assets {
 
 
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-			aiFace face = mesh->mFaces[i];
+			const aiFace face = mesh->mFaces[i];
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 				indices.push_back(face.mIndices[j]);
 		}
@@ -58,9 +58,9 @@ namespace Refraction::Assets {
 		return Engine::Platform::AMeshFragment::MakeMeshFragment(vertices, indices, materials[mesh->mMaterialIndex]);
 	}
 
-	std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(std::string& sourcePath, aiMaterial* mat, aiTextureType type, std::string typeName) {
+	std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(const std::string& sourcePath, const aiMaterial* mat, const aiTextureType type, const std::string& typeName) {
 		std::vector<Common::Ref<Assets::Image>> textures;
-		Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> assetManager) {
+		Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
 			for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
 				aiString str;
 				mat->GetTexture(type, i, &str);
@@ -81,7 +81,7 @@ namespace Refraction::Assets {
 		});
 	}
 
-	void ModelMetadata::Deserialise(std::string data) {
+	void ModelMetadata::Deserialise(const std::string data) {
 		AssetMetadata::Deserialise(data);
 		Utilities::ClassSerialiser::TryParseJSON(data, [&](nlohmann::json& json) {
 			if (json.contains("VertexCount")) VertexCount = json.at("VertexCount").get<int>();
@@ -89,8 +89,8 @@ namespace Refraction::Assets {
 		});
 	}
 
-	void Model::OnLoadAsset(Common::Shared<AssetMetadata> metadata) {
-		auto meta = Common::AsA<ModelMetadata>(metadata);
+	void Model::OnLoadAsset(const Common::Shared<AssetMetadata> metadata) {
+		const auto meta = Common::AsA<ModelMetadata>(metadata);
 		if (!meta) {
 			Log::SError("Metadata cast failed");
 			return;
@@ -104,37 +104,35 @@ namespace Refraction::Assets {
 			return;
 		}
 
-		auto importSourcePath = meta->AssetPath.string().substr(0, meta->AssetPath.string().find_last_of("/"));
+		auto importSourcePath = meta->AssetPath.string().substr(0, meta->AssetPath.string().find_last_of('/'));
 
 		// Create materials
 		Log::SInfo("Parsing materials...");
 		if (scene->mNumMaterials > 0) {
 			for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
-				auto importMat = scene->mMaterials[i];
+				const auto importMat = scene->mMaterials[i];
 
-				Common::Ref<Assets::Material> matWeak;
-				Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> assetManager) {
-					matWeak = assetManager->MakeVolatile<Assets::Material>();
+				Common::Ref<Material> matWeak;
+				Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
+					matWeak = assetManager->MakeVolatile<Material>();
 				});
 				if (matWeak.expired()) continue;
-				auto mat = matWeak.lock();
+				const auto mat = matWeak.lock();
 
-				auto diffuseMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_DIFFUSE, RFCT_TEXTURE_TYPE_DIFFUSE);
-				if (diffuseMaps.size() > 0) mat->mDiffuse = diffuseMaps[0];
+				if (auto diffuseMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_DIFFUSE, RFCT_TEXTURE_TYPE_DIFFUSE); !diffuseMaps.empty()) mat->mDiffuse = diffuseMaps[0];
 				else {
 					Log::SWarn("Imported material does not associate with any diffuse textures, using default texture.");
 				}
-				auto specularMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_SPECULAR, RFCT_TEXTURE_TYPE_SPECULAR);
-				if (specularMaps.size() > 0) mat->mSpecular = specularMaps[0];
+				if (auto specularMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_SPECULAR, RFCT_TEXTURE_TYPE_SPECULAR); !specularMaps.empty()) mat->mSpecular = specularMaps[0];
 				else {
 					Log::SWarn("Imported material does not associate with any specular textures, using default texture.");
 				}
 				mMaterials.push_back(matWeak);
 			}
 		} else { // Create default material
-			Common::Ref<Assets::Material> matWeak;
-			Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> assetManager) {
-				matWeak = assetManager->MakeVolatile<Assets::Material>();
+			Common::Ref<Material> matWeak;
+			Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
+				matWeak = assetManager->MakeVolatile<Material>();
 			});
 			mMaterials.push_back(matWeak);
 		}

@@ -1,6 +1,5 @@
 #include <Core/FileHandling.h>
 #include <Core/Utilities.h>
-#include <Interface/AssetManager.h>
 
 #include "Shader.h"
 
@@ -18,6 +17,7 @@ namespace Refraction::Assets {
 	}
 
 	Shader::~Shader() {
+		if (LoadedShaders.empty()) return;
 		if (glIsProgram(mID)) {
 			glDeleteProgram(mID);
 		}

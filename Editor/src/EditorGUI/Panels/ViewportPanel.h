@@ -7,7 +7,7 @@ namespace Refraction::Editor::GUI {
 	class ViewportPanel : public AEditorPanel {
 	public:
 		using AEditorPanel::AEditorPanel;
-		~ViewportPanel() = default;
+		~ViewportPanel() override = default;
 
 		void Init() override;
 		void OnDraw() override;

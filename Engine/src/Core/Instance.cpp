@@ -7,6 +7,7 @@ bool Refraction::Common::RuntimeExternalReady = false;
 namespace Refraction::Engine {
 	Instance::Instance() {
 		try {
+			UUID::EnableHistory();
 			Common::RuntimeExternalReady = true;
 			Log::InitConsoleLog();
 			mWindow = Platform::AWindow::Get();

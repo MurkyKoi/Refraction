@@ -18,6 +18,8 @@ namespace Refraction::Engine {
 
 	class ALayer {
 	public:
+		virtual ~ALayer() = default;
+
 		virtual void OnAttach() {}
 		virtual void OnPass() {}
 		virtual void OnDetach() {}
@@ -27,14 +29,14 @@ namespace Refraction::Engine {
 	class LayerStack : public Events::AEventDispatcher {
 	public:
 		LayerStack() = default;
-		~LayerStack();
+		~LayerStack() override;
 
-		void PushLayer(Common::Shared<ALayer> layer);
-		void PopLayer(Common::Shared<ALayer> layer);
+		void PushLayer(const Common::Shared<ALayer>& layer);
+		void PopLayer(const Common::Shared<ALayer>& layer);
 
-		void OnPass();
-		void OnDetach();
-		virtual void Dispatch(Common::Shared<Events::Event> event) override;
+		void OnPass() const;
+		void OnDetach() const;
+		void Dispatch(Common::Shared<Events::Event> event) override;
 	private:
 		std::vector<Common::Shared<ALayer>> mLayers;
 	};

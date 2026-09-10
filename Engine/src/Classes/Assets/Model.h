@@ -8,12 +8,12 @@
 #include "Asset.h"
 
 namespace Refraction::Assets {
-	struct ModelMetadata : public AssetMetadata {
+	struct ModelMetadata : AssetMetadata {
 		int VertexCount = 0;
 		int PolyCount = 0;
 
 		ModelMetadata() = default;
-		~ModelMetadata() = default;
+		~ModelMetadata() override = default;
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string data) override;
@@ -26,12 +26,15 @@ namespace Refraction::Assets {
 		Model() = default;
 		~Model() override = default;
 
+		std::string GetSerialisedType() override { return "ModelAsset"; }
 		MetadataType GetMetadataType() override { return MetadataType::Model; }
 	protected:
-		std::vector<Common::Ref<Assets::Material>> mMaterials;
+		std::vector<Common::Ref<Material>> mMaterials;
 
 		void OnLoadAsset(Common::Shared<AssetMetadata> metadata) override;
 	private:
 		unsigned int mID = 0;
 	};
+
+	RFCT_ASSET_REGISTERFACTORY(Model)
 }

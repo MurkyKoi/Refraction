@@ -12,14 +12,16 @@ namespace Refraction::Events {
 	class FrameRenderedEvent : public Events::Event {
 	public:
 		Common::Ref<Assets::Image> mFrame;
-		FrameRenderedEvent(Common::Ref<Assets::Image> newFrame) : mFrame(newFrame) {
+
+		explicit FrameRenderedEvent(const Common::Ref<Assets::Image> &newFrame) : mFrame(newFrame) {
 			mName = "FrameRendered";
 		}
 	};
 	class ViewportResizedEvent : public Events::Event {
 	public:
 		Math::Rect mViewportRect;
-		ViewportResizedEvent(Math::Rect newRect) : mViewportRect(newRect) {
+
+		explicit ViewportResizedEvent(const Math::Rect newRect) : mViewportRect(newRect) {
 			mName = "ViewportResized";
 		}
 	};

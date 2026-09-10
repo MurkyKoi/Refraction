@@ -14,8 +14,8 @@ namespace Refraction::Components {
 
 	nlohmann::json AComponent::Serialise() {
 		return Utilities::ClassSerialiser::AppendJSON({}, [&](nlohmann::json& json) {
+			json["SerialisedType"] = GetSerialisedType();
 			json["UUID"] = mUUID.Serialise();
-			json["TypeName"] = typeid(*this).name();
 			json["ClassName"] = mClassName;
 			json["ParentUUID"] = mParent ? mParent->GetUUID().Serialise() : UUID::Null().Serialise();
 			json["Required"] = mRequired;

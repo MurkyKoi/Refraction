@@ -20,7 +20,6 @@ namespace Refraction::Engine::Platform {
 	};
 
 	struct TextureStructure {
-	public:
 		int Width = 1;
 		int Height = 1;
 		TextureFormat Format = TextureFormat::RGBA8;
@@ -32,11 +31,14 @@ namespace Refraction::Engine::Platform {
 		// Returns a reference to a new empty texture
 		static Common::Ref<ATexture> MakeTexture(const TextureStructure& texStruct);
 		// Returns a reference to a texture made with the given path
-		static Common::Ref<ATexture> FromPath(std::filesystem::path path);
+		static Common::Ref<ATexture> FromPath(const std::filesystem::path& path);
 		// Returns a reference to a texture with the given ID
 		static Common::Ref<ATexture> FromID(unsigned int id);
+		// Deletes all textures in texture pool
+		static void ClearTexturePool();
 
 		ATexture() = default;
+		virtual ~ATexture() = default;
 
 		// Creates new texture in memory
 		virtual void Generate() = 0;

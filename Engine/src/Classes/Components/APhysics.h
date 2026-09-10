@@ -15,6 +15,9 @@ namespace Refraction::Components {
 
 		nlohmann::json Serialise() override;
 		void Deserialise(std::string serialised) override;
+
+		std::string GetSerialisedType() override { return "APhysicsComponent"; }
 	};
 
+	RFCT_COMPONENT_REGISTERFACTORY(APhysics)
 }

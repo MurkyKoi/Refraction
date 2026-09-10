@@ -22,7 +22,7 @@ namespace Refraction::Engine::Platform {
 		}
 	}
 
-	Common::Ref<ATexture> ATexture::FromPath(std::filesystem::path path) {
+	Common::Ref<ATexture> ATexture::FromPath(const std::filesystem::path& path) {
 		switch (ARenderingAPI::GetAPI()) {
 		case RenderingAPI::NONE: default:
 			Log::Render.Warn("Attempt to create texture without an active API");
@@ -38,7 +38,7 @@ namespace Refraction::Engine::Platform {
 		}
 	}
 
-	Common::Ref<ATexture> ATexture::FromID(unsigned int id) {
+	Common::Ref<ATexture> ATexture::FromID(const unsigned int id) {
 		switch (ARenderingAPI::GetAPI()) {
 		case RenderingAPI::NONE: default:
 			Log::Render.Warn("Attempt to get texture without an active API");
@@ -48,6 +48,14 @@ namespace Refraction::Engine::Platform {
 		case RenderingAPI::VULKAN:
 			Log::Render.Warn("Attempt to get texture with Vulkan. Not implemented yet.");
 			return {};
+		}
+	}
+
+	void ATexture::ClearTexturePool() {
+		for (auto it = TexturePool.begin(); it != TexturePool.end(); ) {
+			auto& [uuid, tex] = *it;
+			tex.reset();
+			it = TexturePool.erase(it);
 		}
 	}
 }

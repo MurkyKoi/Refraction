@@ -11,19 +11,22 @@ namespace Refraction {
 	class UUID {
 	public:
 		// Returns a UUID equivalent to null
-		static UUID Null() { return {0}; }
+		static UUID Null() { return UUID(0); }
 
 		// Initialises a UUID using its int64 value and adds it to the generator history
 		// Note: Returns a null UUID if the provided UUID is already in generator history, unless specified not to
 		static UUID FromExisting(UUIDValue id, bool ignoreExisting = false);
 		// Initialises a UUID from a UUID::Serialise() string and adds it to the generator history
 		// Note: Returns a null UUID if the provided UUID is already in generator history
-		static UUID Deserialise(std::string serialised);
+		static UUID Deserialise(const std::string &serialised);
 
 		// Converts a UUID int to a formatted string
-		static inline std::string AsString(UUIDValue value) {
-			return UUID::FromExisting(value, true).AsString();
+		static std::string AsString(const UUIDValue value) {
+			return FromExisting(value, true).AsString();
 		}
+
+		// Enable WriteToHistory, starts disabled as UUID is created while the UUIDHistory set isn't initialised
+		static void EnableHistory() { WriteToHistory = true; }
 
 		// The UUID generator uses the system clock and RNG along with a repetition counter to hopefully guarantee a universally unique ID
 		// It is formatted as such:
@@ -55,10 +58,11 @@ namespace Refraction {
 		operator UUIDValue() const { return AsInt(); }
 
 	private:
+		inline static bool WriteToHistory = false;
 		static std::unordered_set<UUIDValue> UUIDHistory;
 
 		// Generates a UUID where all sections hold the same value. Not added to generator history.
-		UUID(uint16_t initValue);
+		explicit UUID(uint16_t initValue);
 
 		uint16_t mElapsedSeconds = 0;
 		uint16_t mElapsedMilliseconds = 0;
@@ -67,8 +71,8 @@ namespace Refraction {
 	};
 
 	namespace Utilities {
-		std::vector<UUIDValue> ToInts(std::vector<UUID> uuids);
-		std::vector<UUID> FromInts(std::vector<UUIDValue> uuids);
-		std::vector<std::string> ToStrings(std::vector<UUID> uuids);
+		static std::vector<UUIDValue> ToInts(const std::vector<UUID>& uuids);
+		static std::vector<UUID> FromInts(const std::vector<UUIDValue>& uuids);
+		static std::vector<std::string> ToStrings(const std::vector<UUID>& uuids);
 	}
 }

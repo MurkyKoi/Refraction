@@ -5,7 +5,7 @@
 #include "Shader.h"
 
 namespace Refraction::Assets {
-	class Material : public Engine::ISerialisable<Material, Asset> {
+	class Material : public Asset {
 	public:
 		static constexpr std::string SerialisedTypeName = "MaterialAsset";
 
@@ -17,7 +17,9 @@ namespace Refraction::Assets {
 		Material();
 
 		void Activate();
+
+		std::string GetSerialisedType() override { return "MaterialAsset"; }
 	};
 
-	RFCT_ASSET_REGISTERFACTORY(Material, Asset)
+	RFCT_ASSET_REGISTERFACTORY(Material)
 }

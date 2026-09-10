@@ -1,5 +1,4 @@
 #include <json.hpp>
-#include <utility>
 
 #include <Core/FileHandling.h>
 #include <Classes/ClassSerialiser.h>
@@ -57,7 +56,7 @@ namespace Refraction::Assets {
 	}
 
 	void AssetMetadata::Deserialise(std::string data) {
-		Utilities::ClassSerialiser::TryParseJSON(std::move(data), [&](nlohmann::json& json) {
+		Utilities::ClassSerialiser::TryParseJSON(data, [&](nlohmann::json& json) {
 			AssetUUID = UUID::Deserialise(json["AssetUUID"]);
 			for (int i = 0; i < static_cast<int>(MetadataType::COUNT); i++) {
 				if (json["MetadataType"] == MetadataTypeName[i]) {
@@ -80,7 +79,7 @@ namespace Refraction::Assets {
 			metaWeak = assetManager->FetchMetadata(uuid);
 		});
 
-		if (auto meta = metaWeak.lock()) {
+		if (const auto meta = metaWeak.lock()) {
 			mUUID = uuid;
 			if (!std::filesystem::exists(meta->SourcePath) && !std::filesystem::exists(meta->AssetPath)) throw std::runtime_error("Failed to load asset with provided metadata, no asset path exists.");
 

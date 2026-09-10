@@ -6,7 +6,8 @@
 
 #include <Core/Common.h>
 #include <Core/UUID.h>
-#include <Classes/ISerialisable.h>
+
+#include "Classes/ISerialisable.h"
 
 #define RFCT_ASSET_METADATA_EXTENSION ".rfmeta"
 
@@ -49,10 +50,10 @@ namespace Refraction::Assets {
 		virtual void Deserialise(std::string data);
 	};
 	
-	class Asset {
+	class Asset : public Engine::ISerialisable {
 	public:
 		Asset() = default;
-		virtual ~Asset();
+		~Asset() override;
 
 		// Loads asset of the provided UUID from disk
 		void LoadAsset(UUIDValue uuid);
@@ -62,12 +63,12 @@ namespace Refraction::Assets {
 		// Note: Will reset the data of the asset in memory
 		void MakeVolatile();
 
+		std::string GetSerialisedType() override { return "Asset"; }
 		virtual MetadataType GetMetadataType() { return MetadataType::Asset; }
 
-		[[nodiscard]] inline bool IsVolatile() const { return mVolatile; }
-		[[nodiscard]] inline UUIDValue GetUUID() const { return mUUID; }
+		[[nodiscard]] bool IsVolatile() const { return mVolatile; }
+		[[nodiscard]] UUIDValue GetUUID() const { return mUUID; }
 	protected:
-		std::string SerialisedTypeName = "BaseAsset";
 
 		std::string mDisplayName;
 		// Asset does not have a location on disk if true

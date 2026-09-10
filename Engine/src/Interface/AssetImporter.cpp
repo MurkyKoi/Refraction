@@ -6,7 +6,7 @@
 #include "AssetImporter.h"
 
 namespace Refraction::Engine {
-	UUIDValue AssetImporter::Import(std::filesystem::path sourcePath) {
+	UUIDValue AssetImporter::Import(const std::filesystem::path& sourcePath) {
 		if (!sourcePath.has_filename()) throw Common::RuntimeError("Cannot import anything other than a file");
 		auto currentProject = Project::GetInstance().lock();
 		if (!currentProject) throw Common::RuntimeError("Cannot import without an active project");
@@ -34,22 +34,25 @@ namespace Refraction::Engine {
 		meta.AssetUUID = UUID();
 		meta.AssetPath = dstName;
 		meta.SourcePath = sourcePath;
-		meta.FileSize = std::filesystem::file_size(dstName);
+		if (is_directory(dstName)) {
+			for (const auto& file : FileHandling::GetFilesInFolder(dstName)) {
+				meta.FileSize += std::filesystem::file_size(file);
+			}
+		} else meta.FileSize = std::filesystem::file_size(dstName);
 
-		auto extension = sourcePath.extension();
-		if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") {
+
+		if (auto extension = sourcePath.extension(); extension == ".png" || extension == ".jpg" || extension == ".jpeg") {
 			meta.MetaType = Assets::MetadataType::Image;
-			meta.AssetType = typeid(Assets::Image).name();
+			meta.AssetType = ClassFactory::FindSerialisedTypeName<Assets::Image>();
 		} else if (extension == ".obj" || extension == ".fbx") {
 			meta.MetaType = Assets::MetadataType::Model;
-			meta.AssetType = typeid(Assets::Model).name();
+			meta.AssetType = ClassFactory::FindSerialisedTypeName<Assets::Model>();
 		} else if (extension.empty()) {
-			auto files = FileHandling::GetFilesInFolder(sourcePath);
-			if (files.size() == 2) {
+			if (auto files = FileHandling::GetFilesInFolder(sourcePath); files.size() == 2) {
 				// Assume it's a shader
 				if (FileHandling::GetFirstFileOfExtInFolder(sourcePath, ".frag").exists() && FileHandling::GetFirstFileOfExtInFolder(sourcePath, ".vert").exists()) {
 					meta.MetaType = Assets::MetadataType::Shader;
-					meta.AssetType = typeid(Assets::Shader).name();
+					meta.AssetType = ClassFactory::FindSerialisedTypeName<Assets::Shader>();
 				}
 			}
 		}
@@ -61,8 +64,7 @@ namespace Refraction::Engine {
 
 		auto metaPath = meta.GetPath(); // GetPath is valid because we set AssetPath
 		// Make sure it's a full path before writing to it
-		auto projectPath = currentProject->GetFilePath().parent_path();
-		if (metaPath.string().find(projectPath.string()) == std::string::npos) {
+		if (auto projectPath = currentProject->GetFilePath().parent_path(); metaPath.string().find(projectPath.string()) == std::string::npos) {
 			metaPath = projectPath / "Assets" / metaPath;
 		}
 		auto serialised = meta.Serialise();
@@ -76,8 +78,8 @@ namespace Refraction::Engine {
 
 		// Register asset
 		UUIDValue uuid = 0;
-		AssetManager::Try([&](Common::Shared<AssetManager> manager) {
-			auto asset = manager->RegisterAsset(metaPath);
+		AssetManager::Try([&](const Common::Shared<AssetManager>& manager) {
+			const auto asset = manager->RegisterAsset(metaPath);
 			uuid = asset.lock()->GetUUID();
 		});
 		return uuid;

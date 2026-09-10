@@ -118,7 +118,7 @@ namespace Refraction {
 			callerSymbol = cpptrace::prune_symbol(frames[frameIndex].symbol);
 
 			// cpptrace doesn't seem to prune properly in release builds so we gotta do some manual pruning
-			if (auto symbolPos = callerSymbol.find_last_of('('); symbolPos != std::string::npos) {
+			if (const auto symbolPos = callerSymbol.find_last_of('('); symbolPos != std::string::npos) {
 				callerSymbol = callerSymbol.substr(0, symbolPos);
 			}
 
@@ -146,7 +146,7 @@ namespace Refraction {
 		if (auto symbolPos = callerSymbol.find_last_of(':'); symbolPos != std::string::npos) {
 
 			functionName = callerSymbol.substr(symbolPos + 1, -1);
-			auto classSymbolStr = callerSymbol.substr(0, symbolPos - 1);
+			const auto classSymbolStr = callerSymbol.substr(0, symbolPos - 1);
 
 			// Get class name from the remaining symbol string
 			if (symbolPos = classSymbolStr.find_last_of(':'); symbolPos != std::string::npos) {
@@ -179,9 +179,9 @@ namespace Refraction {
 				callback(printColour, "Stack trace, recent first:", true);
 				for (size_t i = 2; i < frames.size(); i++) {
 					auto& frame = frames[i];
-					if (frame.symbol == "main()") break; // stop after reaching entrypoint
+					if (frame.symbol == "main()" || frame.symbol == "main") break; // stop after reaching entrypoint
 					callback(printColour, std::format("#{} ", i-2), true);
-					callback({ 255, 160, 70 }, frame.symbol, false);
+					callback({ .R = 255, .G = 160, .B = 70 }, frame.symbol, false);
 					callback(white, std::format("\tAt line {} in file ", frame.line.value_or(0)), true);
 					callback(classColour, frame.filename, false);
 					callback(white, cpptrace::get_snippet(frame.filename, frame.line.value_or(0), 1), true);

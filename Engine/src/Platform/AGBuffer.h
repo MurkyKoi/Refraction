@@ -31,21 +31,21 @@ namespace Refraction::Engine::Platform {
 		static constexpr unsigned int TextureCount = 6;
 
 		unsigned int mFBID = 0;
-		Common::Ref<Platform::ATexture> mDiffuse;
-		Common::Ref<Platform::ATexture> mNormal;
-		Common::Ref<Platform::ATexture> mPosition;
-		Common::Ref<Platform::ATexture> mSMR; // Specular R, Metallic G, Roughness B
-		Common::Ref<Platform::ATexture> mDepth;
-		Common::Ref<Platform::ATexture> mCFAAData;
-		Common::Ref<Platform::ATexture> mFinal;
+		Common::Ref<ATexture> mDiffuse;
+		Common::Ref<ATexture> mNormal;
+		Common::Ref<ATexture> mPosition;
+		Common::Ref<ATexture> mSMR; // Specular R, Metallic G, Roughness B
+		Common::Ref<ATexture> mDepth;
+		Common::Ref<ATexture> mCFAAData;
+		Common::Ref<ATexture> mFinal;
 		UUIDValue mFinalImageUUID = 0;
 
 		AGBuffer();
 		virtual ~AGBuffer();
 
-		inline std::vector<Common::Ref<Platform::ATexture>> GetTextureArray() {
+		std::vector<Common::Ref<ATexture>> GetTextureArray() {
 			return { mDiffuse, mNormal, mPosition, mSMR, mDepth, mCFAAData, mFinal };
-		};
+		}
 
 		virtual void Cleanup() = 0;
 	};

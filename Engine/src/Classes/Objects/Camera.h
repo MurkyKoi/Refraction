@@ -15,7 +15,7 @@ namespace Refraction::Objects {
 
 		Camera();
 
-		void ProcessInput(Math::Vector3 dirInput, Math::Vector3 angInput);
+		void ProcessInput(Math::Vector3 dirInput, const Math::Vector3 &angInput);
 		[[nodiscard]] Math::Matrix4 GetViewMatrix() const { return Math::Matrix4::LookAt(mTransform.GetWorldPosition(), mCameraTarget, mTransform.GetUpVector()); };
 
 		nlohmann::json Serialise() override;

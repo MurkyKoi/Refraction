@@ -38,7 +38,7 @@ namespace Refraction::Components {
 
 		auto shader = mShader.lock();
 		shader->Activate();
-		shader->SetUniformMat4("modelTransform", mTransform.ToMatrix()* mParent->GetWorldTransform().ToMatrix());
+		shader->SetUniformMat4("modelTransform", mTransform.ToMatrix()* mParent->GetWorldMatrix());
 		for (auto& mesh : fragments) {
 			mesh->Draw();
 			FrameVertexCount += (int)mesh->mVertices.size();

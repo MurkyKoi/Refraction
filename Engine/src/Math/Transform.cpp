@@ -6,7 +6,7 @@
 namespace RUtil = Refraction::Utilities;
 
 namespace Refraction::Math {
-	void SpatialPosition::Translate(Vector3 delta) {
+	void SpatialPosition::Translate(const Vector3& delta) {
 		CellPosition += delta;
 		while (CellPosition.x < 0) {
 			GridIndex.x -= 1;
@@ -38,7 +38,7 @@ namespace Refraction::Math {
 	Transform::Transform() {
 		mSpatialPosition.GridIndex = Vector3(0);
 		mSpatialPosition.CellPosition = Vector3(0.0f);
-		mOrientation = Orientation();
+		mOrientation = Quaternion();
 		mScale = Vector3(1.0f);
 	}
 
@@ -46,7 +46,7 @@ namespace Refraction::Math {
 		Translate(pos);
 	}
 
-	Transform Transform::FromLookAt(const Vector3& eye, Vector3 target, Vector3 targetUp) {
+	Transform Transform::FromLookAt(const Vector3& eye, const Vector3& target, const Vector3& targetUp) {
 		Transform result(eye);
 		result.LookAt(target, targetUp);
 		return result;
@@ -54,43 +54,35 @@ namespace Refraction::Math {
 
 	Transform Transform::FromMatrix(Matrix4& mat) {
 		Transform result(mat.GetTranslation());
-		result.mOrientation = mat.ToEulerAngles();
+		result.mOrientation = Quaternion(mat.ToQuaternion());
 		result.mScale = mat.GetScale();
 		return result;
 	}
 
-	void Transform::Rotate(float angle, Vector3 axis) {
-		mOrientation = mOrientation.Rotate(angle, axis);
+	void Transform::Rotate(const float angle, const Vector3& axis) {
+		mOrientation *= Quaternion::FromAxisAngle(angle, axis);
 	}
 
-	void Transform::Rotate(Vector3 delta) {
+	void Transform::Rotate(const Vector3& delta) {
+		mOrientation *= Quaternion::FromEulerAngles(delta);
+	}
+
+	void Transform::Rotate(const Quaternion& delta) {
 		mOrientation *= delta;
 	}
 
-	void Transform::Rotate(Orientation delta) {
-		mOrientation *= delta;
-	}
-
-	void Transform::Scale(Vector3 delta) {
+	void Transform::Scale(const Vector3& delta) {
 		mScale += delta;
 	}
 
-	void Transform::LookAt(Vector3 target, Vector3 targetUp) {
+	void Transform::LookAt(const Vector3& target, const Vector3& targetUp) {
 		Rotate(Quaternion::LookAt(GetWorldPosition(), target, targetUp).ToEulerAngles());
 	}
 
 	Matrix4 Transform::ToMatrix() const {
-		//glm::mat4 transform = glm::mat4(1.0f);
-		//glm::vec3 rotation = Utilities::NativeToGLMVec3(mOrientation.ToEulerAngles());
-		//transform = glm::translate(transform, Utilities::NativeToGLMVec3(GetWorldPosition()));
-		//transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-		//transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-		//transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-		//transform = glm::scale(transform, Utilities::NativeToGLMVec3(mScale));
-		Matrix4 transform = Matrix4();
-		transform = transform.Translate(GetWorldPosition());
-		transform = transform.Rotate(mOrientation);
-		transform = transform.Scale(mScale);
-		return transform; //Utilities::GLMToNativeMat4(transform);
+		auto scale = Matrix4::FromScale(mScale);
+		const auto rotation = Matrix4::FromRotation(mOrientation);
+		const auto translation = Matrix4::FromTranslation(GetWorldPosition());
+		return scale * rotation * translation;
 	}
 }

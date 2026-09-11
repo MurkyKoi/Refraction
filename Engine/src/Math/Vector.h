@@ -11,18 +11,18 @@ namespace Refraction::Math {
 		float x = 0;
 		float y = 0;
 
-		Vector2(float x, float y) : x(x), y(y) {};
-		Vector2(int x, int y) : Vector2((float)x, (float)y) {};
-		Vector2(float n) : x(n), y(n) {};
-		Vector2(int n) : Vector2((float)n) {};
-		Vector2() : x(0), y(0) {};
+		Vector2(const float x, const float y) : x(x), y(y) {}
+		Vector2(const int x, const int y) : Vector2(static_cast<float>(x), static_cast<float>(y)) {}
+		explicit Vector2(const float n) : x(n), y(n) {}
+		explicit Vector2(const int n) : Vector2(static_cast<float>(n)) {}
+		Vector2() = default;
 
 		Vector2(const Vector2& v) {
 			x = v.x;
 			y = v.y;
 		}
 
-		inline Vector2& operator=(const Vector2& v2) {
+		Vector2& operator=(const Vector2& v2) {
 			if (this != &v2) {
 				x = v2.x;
 				y = v2.y;
@@ -30,48 +30,47 @@ namespace Refraction::Math {
 			return *this;
 		}
 
-		inline Vector2 operator-() {
+		Vector2 operator-() const {
 			return Vector2(-x, -y);
 		}
 
-		inline Vector2 operator+(Vector2 v2) const { return Vector2(x + v2.x, y + v2.y); }
-		inline Vector2 operator-(Vector2 v2) const { return Vector2(x - v2.x, y - v2.y); }
-		inline Vector2 operator*(Vector2 v2) const { return Vector2(x * v2.x, y * v2.y); }
-		inline Vector2 operator*(float n) const { return Vector2(x * n, y * n); }
+		Vector2 operator+(const Vector2& v2) const { return Vector2(x + v2.x, y + v2.y); }
+		Vector2 operator-(const Vector2& v2) const { return Vector2(x - v2.x, y - v2.y); }
+		Vector2 operator*(const Vector2& v2) const { return Vector2(x * v2.x, y * v2.y); }
+		Vector2 operator*(const float n) const { return Vector2(x * n, y * n); }
 
-		inline void operator+=(Vector2 v2) { x += v2.x; y += v2.y; }
-		inline void operator-=(Vector2 v2) { x -= v2.x; y -= v2.y; }
-		inline void operator*=(Vector2 v2) { x *= v2.x; y *= v2.y; }
-		inline void operator*=(float n) { x *= n; y *= n; }
+		void operator+=(const Vector2& v2) { x += v2.x; y += v2.y; }
+		void operator-=(const Vector2& v2) { x -= v2.x; y -= v2.y; }
+		void operator*=(const Vector2& v2) { x *= v2.x; y *= v2.y; }
+		void operator*=(const float n) { x *= n; y *= n; }
 
 		bool operator==(const Vector2& v2) const = default;
-		inline bool operator<(const Vector2& v2) const { return (x < v2.x) && (y < v2.y); }
-		inline bool operator>(const Vector2& v2) const { return (x > v2.x) && (y > v2.y); }
-		inline float& operator[](unsigned int index) {
+		bool operator<(const Vector2& v2) const { return (x < v2.x) && (y < v2.y); }
+		bool operator>(const Vector2& v2) const { return (x > v2.x) && (y > v2.y); }
+		float& operator[](const unsigned int index) {
 			if (index == 0) return x;
 			if (index == 1) return y;
 			throw std::runtime_error("Index out of range");
 		}
 
-		inline void Normalise() { (*this) *= 1.0f / sqrtf(Dot((*this))); }
-		inline float Magnitude() const { return fabsf(x) + fabsf(y); }
-		inline float Dot(const Vector2& v2) const { return x * v2.x + y * v2.y; };
-		inline float Distance(const Vector2& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2)); };
+		void Normalise() { *this *= 1.0f / sqrtf(Dot(*this)); }
+		[[nodiscard]] float Magnitude() const { return fabsf(x) + fabsf(y); }
+		[[nodiscard]] float Dot(const Vector2& v2) const { return x * v2.x + y * v2.y; };
+		[[nodiscard]] float Distance(const Vector2& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2)); };
 
-		inline Vector2 Normalised() const {
-			Vector2 copy = Vector2(x, y);
+		[[nodiscard]] Vector2 Normalised() const {
+			auto copy = Vector2(x, y);
 			copy.Normalise();
 			return copy;
 		}
 
-		inline std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
-			std::string xStr = fmtArgs.AsInt ? std::to_string((int)x) : std::to_string(x);
-			std::string yStr = fmtArgs.AsInt ? std::to_string((int)y) : std::to_string(y);
+		[[nodiscard]] std::string ToString(const PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
+			const std::string xStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(x)) : std::to_string(x);
+			const std::string yStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(y)) : std::to_string(y);
 			if (fmtArgs.Pretty) {
 				return std::string("x: " + xStr + "\ny: " + yStr);
-			} else {
-				return std::string("{" + xStr + ", " + yStr + "}");
 			}
+			return std::string("{" + xStr + ", " + yStr + "}");
 		}
 	};
 
@@ -81,75 +80,74 @@ namespace Refraction::Math {
 		float y = 0;
 		float z = 0;
 
-		static Vector3 Front() { return Vector3(0, 0, -1); }
-		static Vector3 Right() { return Vector3(1, 0, 0); }
-		static Vector3 Up() { return Vector3(0, 1, 0); }
-		static Vector3 X() { return Vector3(1, 0, 0); }
-		static Vector3 Y() { return Vector3(0, 1, 0); }
-		static Vector3 Z() { return Vector3(0, 0, 1); }
+		static Vector3 Front() { return {0, 0, -1}; }
+		static Vector3 Right() { return {1, 0, 0}; }
+		static Vector3 Up() { return {0, 1, 0}; }
+		static Vector3 X() { return {1, 0, 0}; }
+		static Vector3 Y() { return {0, 1, 0}; }
+		static Vector3 Z() { return {0, 0, 1}; }
 		static Vector3 Zero() { return Vector3(0); }
 		static Vector3 One() { return Vector3(1); }
 
-		Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
-		Vector3(int x, int y, int z) : x((float)x), y((float)y), z((float)z) {}
-		Vector3(const Vector3& v) : x(v.x), y(v.y), z(v.z) {}
-		Vector3(float n) : x(n), y(n), z(n) {}
-		Vector3(int n) : x((float)n), y((float)n), z((float)n) {}
-		Vector3() : x(0), y(0), z(0) {}
+		Vector3(const float x, const float y, const float z) : x(x), y(y), z(z) {}
+		Vector3(const int x, const int y, const int z) : x(static_cast<float>(x)), y(static_cast<float>(y)), z(static_cast<float>(z)) {}
+		Vector3(const Vector3& v) = default;
+		explicit Vector3(const float n) : x(n), y(n), z(n) {}
+		explicit Vector3(const int n) : x(static_cast<float>(n)), y(static_cast<float>(n)), z(static_cast<float>(n)) {}
+		Vector3() = default;
 
-		inline Vector3& operator=(const Vector3& v2) {
+		Vector3& operator=(const Vector3& v2) {
 			if (this != &v2) { x = v2.x; y = v2.y; z = v2.z; }
 			return *this;
 		}
 
-		inline Vector3 operator-() const { return Vector3(-x, -y, -z); }
+		Vector3 operator-() const { return Vector3(-x, -y, -z); }
 
 
-		inline Vector3 operator+(Vector3 v2) const { return Vector3(x + v2.x, y + v2.y, z + v2.z); }
-		inline Vector3 operator-(Vector3 v2) const { return Vector3(x - v2.x, y - v2.y, z - v2.z); }
-		inline Vector3 operator*(Vector3 v2) const { return Vector3(x * v2.x, y * v2.y, z * v2.z); }
-		inline Vector3 operator*(float n) const { return Vector3(x * n, y * n, z * n); }
+		Vector3 operator+(const Vector3 v2) const { return Vector3(x + v2.x, y + v2.y, z + v2.z); }
+		Vector3 operator-(const Vector3 v2) const { return Vector3(x - v2.x, y - v2.y, z - v2.z); }
+		Vector3 operator*(const Vector3 v2) const { return Vector3(x * v2.x, y * v2.y, z * v2.z); }
+		Vector3 operator*(const float n) const { return Vector3(x * n, y * n, z * n); }
 
-		inline void operator+=(Vector3 v2) { x += v2.x; y += v2.y; z += v2.z; }
-		inline void operator-=(Vector3 v2) { x -= v2.x; y -= v2.y; z -= v2.z; }
-		inline void operator*=(Vector3 v2) { x *= v2.x; y *= v2.y; z *= v2.z; }
-		inline void operator*=(float n) { x *= n; y *= n; z *= n; }
+		void operator+=(const Vector3 v2) { x += v2.x; y += v2.y; z += v2.z; }
+		void operator-=(const Vector3 v2) { x -= v2.x; y -= v2.y; z -= v2.z; }
+		void operator*=(const Vector3 v2) { x *= v2.x; y *= v2.y; z *= v2.z; }
+		void operator*=(const float n) { x *= n; y *= n; z *= n; }
 
 		bool operator==(const Vector3& v2) const = default;
-		inline bool operator<(const Vector3& v2) const { return (x < v2.x) && (y < v2.y) && (z < v2.z); }
-		inline bool operator>(const Vector3& v2) const { return (x > v2.x) && (y > v2.y) && (z > v2.z); }
-		inline float& operator[](unsigned int index) {
+		bool operator<(const Vector3& v2) const { return (x < v2.x) && (y < v2.y) && (z < v2.z); }
+		bool operator>(const Vector3& v2) const { return (x > v2.x) && (y > v2.y) && (z > v2.z); }
+		float& operator[](const unsigned int index) {
 			if (index == 0) return x;
 			if (index == 1) return y;
 			if (index == 2) return z;
 			throw std::runtime_error("Index out of range");
 		}
 
-		inline Vector3 operator*(Vector2 v2) const { return Vector3(x * v2.x, y * v2.y, z); }
-		inline Vector3 operator+(Vector2 v2) const { return Vector3(x + v2.x, y + v2.y, z); }
-		inline Vector3 operator-(Vector2 v2) const { return Vector3(x - v2.x, y - v2.y, z); }
+		Vector3 operator*(const Vector2& v2) const { return Vector3(x * v2.x, y * v2.y, z); }
+		Vector3 operator+(const Vector2& v2) const { return Vector3(x + v2.x, y + v2.y, z); }
+		Vector3 operator-(const Vector2& v2) const { return Vector3(x - v2.x, y - v2.y, z); }
 
-		inline void Normalise() { (*this) *= 1.0f / sqrtf(Dot((*this))); }
-		inline float Magnitude() const { return fabsf(x) + fabsf(y) + fabsf(z); }
-		inline float Dot(const Vector3& v2) const { return x * v2.x + y * v2.y + z * v2.z; };
-		inline float Distance(const Vector3& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2) + powf(z - v2.z, 2)); };
-		inline Vector3 Cross(const Vector3& v2) const { return Vector3(y * v2.z - z * v2.y, z * v2.x - x * v2.z, x * v2.y - y * v2.x); };
+		void Normalise() { (*this) *= 1.0f / sqrtf(Dot((*this))); }
+		[[nodiscard]] float Magnitude() const { return fabsf(x) + fabsf(y) + fabsf(z); }
+		[[nodiscard]] float Dot(const Vector3& v2) const { return x * v2.x + y * v2.y + z * v2.z; };
+		[[nodiscard]] float Distance(const Vector3& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2) + powf(z - v2.z, 2)); };
+		[[nodiscard]] Vector3 Cross(const Vector3& v2) const { return Vector3(y * v2.z - z * v2.y, z * v2.x - x * v2.z, x * v2.y - y * v2.x); };
 
-		inline Vector3 Normalised() const {
-			Vector3 copy = Vector3(x, y, z);
+		[[nodiscard]] Vector3 Normalised() const {
+			auto copy = Vector3(x, y, z);
 			copy.Normalise();
 			return copy;
 		}
 
-		inline std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
-			std::string xStr = fmtArgs.AsInt ? std::to_string((int)x) : std::to_string(x);
-			std::string yStr = fmtArgs.AsInt ? std::to_string((int)y) : std::to_string(y);
-			std::string zStr = fmtArgs.AsInt ? std::to_string((int)z) : std::to_string(z);
+		[[nodiscard]] std::string ToString(const PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
+			const std::string xStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(x)) : std::to_string(x);
+			const std::string yStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(y)) : std::to_string(y);
+			const std::string zStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(z)) : std::to_string(z);
 			if (fmtArgs.Pretty) {
 				return std::string("x: " + xStr + "\ny: " + yStr + "\nz: " + zStr);
-			} else {
-				return std::string("{" + xStr + ", " + yStr + ", " + zStr + "}");
 			}
+			return std::string("{" + xStr + ", " + yStr + ", " + zStr + "}");
 		}
 	};
 
@@ -160,9 +158,9 @@ namespace Refraction::Math {
 		float z = 0;
 		float w = 0;
 
-		Vector4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {};
-		Vector4(float n) : x(n), y(n), z(n), w(n) {};
-		Vector4() : x(0), y(0), z(0), w(0) {};
+		Vector4(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {}
+		explicit Vector4(const float n) : x(n), y(n), z(n), w(n) {}
+		Vector4() = default;
 
 		Vector4(const Vector4& v) {
 			x = v.x;
@@ -171,7 +169,7 @@ namespace Refraction::Math {
 			w = v.w;
 		}
 
-		inline Vector4& operator=(const Vector4& v2) {
+		Vector4& operator=(const Vector4& v2) {
 			if (this != &v2) {
 				x = v2.x;
 				y = v2.y;
@@ -181,25 +179,25 @@ namespace Refraction::Math {
 			return *this;
 		}
 
-		inline Vector4 operator-() const {
+		Vector4 operator-() const {
 			return Vector4(-x, -y, -z, -w);
 		}
 
 
-		inline Vector4 operator+(Vector4 v2) const { return Vector4(x + v2.x, y + v2.y, z + v2.z, w + v2.w); }
-		inline Vector4 operator-(Vector4 v2) const { return Vector4(x - v2.x, y - v2.y, z - v2.z, w - v2.w); }
-		inline Vector4 operator*(Vector4 v2) const { return Vector4(x * v2.x, y * v2.y, z * v2.z, w * v2.w); }
-		inline Vector4 operator*(float n) const { return Vector4(x * n, y * n, z * n, w * n); }
+		Vector4 operator+(const Vector4& v2) const { return Vector4(x + v2.x, y + v2.y, z + v2.z, w + v2.w); }
+		Vector4 operator-(const Vector4& v2) const { return Vector4(x - v2.x, y - v2.y, z - v2.z, w - v2.w); }
+		Vector4 operator*(const Vector4& v2) const { return Vector4(x * v2.x, y * v2.y, z * v2.z, w * v2.w); }
+		Vector4 operator*(const float n) const { return Vector4(x * n, y * n, z * n, w * n); }
 
-		inline void operator+=(Vector4 v2) { x += v2.x; y += v2.y; z += v2.z; w += v2.w; }
-		inline void operator-=(Vector4 v2) { x -= v2.x; y -= v2.y; z -= v2.z; w -= v2.w; }
-		inline void operator*=(Vector4 v2) { x *= v2.x; y *= v2.y; z *= v2.z; w *= v2.w; }
-		inline void operator*=(float n) { x *= n; y *= n; z *= n; w *= n; }
+		void operator+=(const Vector4& v2) { x += v2.x; y += v2.y; z += v2.z; w += v2.w; }
+		void operator-=(const Vector4& v2) { x -= v2.x; y -= v2.y; z -= v2.z; w -= v2.w; }
+		void operator*=(const Vector4& v2) { x *= v2.x; y *= v2.y; z *= v2.z; w *= v2.w; }
+		void operator*=(const float n) { x *= n; y *= n; z *= n; w *= n; }
 
 		bool operator==(const Vector4& v2) const = default;
-		inline bool operator<(const Vector4& v2) const { return (x < v2.x) && (y < v2.y) && (z < v2.z) && (w < v2.w); }
-		inline bool operator>(const Vector4& v2) const { return (x > v2.x) && (y > v2.y) && (z > v2.z) && (w > v2.w); }
-		inline float& operator[](unsigned int index) {
+		bool operator<(const Vector4& v2) const { return (x < v2.x) && (y < v2.y) && (z < v2.z) && (w < v2.w); }
+		bool operator>(const Vector4& v2) const { return (x > v2.x) && (y > v2.y) && (z > v2.z) && (w > v2.w); }
+		float& operator[](const unsigned int index) {
 			if (index == 0) return x;
 			if (index == 1) return y;
 			if (index == 2) return z;
@@ -208,45 +206,44 @@ namespace Refraction::Math {
 		}
 
 		// Compatibility with smaller vectors
-		inline Vector4 operator*(Vector3 v2) const { return Vector4(x * v2.x, y * v2.y, z * v2.z, w); }
-		inline Vector4 operator+(Vector3 v2) const { return Vector4(x + v2.x, y + v2.y, z + v2.z, w); }
-		inline Vector4 operator-(Vector3 v2) const { return Vector4(x - v2.x, y - v2.y, z - v2.z, w); }
-		inline Vector4 operator*(Vector2 v2) const { return Vector4(x * v2.x, y * v2.y, z, w); }
-		inline Vector4 operator+(Vector2 v2) const { return Vector4(x + v2.x, y + v2.y, z, w); }
-		inline Vector4 operator-(Vector2 v2) const { return Vector4(x - v2.x, y - v2.y, z, w); }
+		Vector4 operator*(const Vector3 &v2) const { return Vector4(x * v2.x, y * v2.y, z * v2.z, w); }
+		Vector4 operator+(const Vector3 &v2) const { return Vector4(x + v2.x, y + v2.y, z + v2.z, w); }
+		Vector4 operator-(const Vector3 &v2) const { return Vector4(x - v2.x, y - v2.y, z - v2.z, w); }
+		Vector4 operator*(const Vector2& v2) const { return Vector4(x * v2.x, y * v2.y, z, w); }
+		Vector4 operator+(const Vector2& v2) const { return Vector4(x + v2.x, y + v2.y, z, w); }
+		Vector4 operator-(const Vector2& v2) const { return Vector4(x - v2.x, y - v2.y, z, w); }
 
-		inline void operator+=(Vector3 v2) {
+		void operator+=(const Vector3 &v2) {
 			x += v2.x;
 			y += v2.y;
 			z += v2.z;
 		}
-		inline void operator-=(Vector3 v2) {
+		void operator-=(const Vector3 &v2) {
 			x -= v2.x;
 			y -= v2.y;
 			z -= v2.z;
 		}
 
-		inline void Normalise() { (*this) *= 1.0f / sqrtf(Dot((*this))); }
-		inline float Magnitude() const { return fabsf(x) + fabsf(y) + fabsf(z) + fabsf(w); }
-		inline float Dot(const Vector4& v2) const { return x * v2.x + y * v2.y + z * v2.z + w * v2.w; };
-		inline float Distance(const Vector4& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2) + powf(z - v2.z, 2) + powf(w - v2.w, 2)); };
+		void Normalise() { *this *= 1.0f / sqrtf(Dot(*this)); }
+		[[nodiscard]] float Magnitude() const { return fabsf(x) + fabsf(y) + fabsf(z) + fabsf(w); }
+		[[nodiscard]] float Dot(const Vector4& v2) const { return x * v2.x + y * v2.y + z * v2.z + w * v2.w; };
+		[[nodiscard]] float Distance(const Vector4& v2) const { return sqrtf(powf(x - v2.x, 2) + powf(y - v2.y, 2) + powf(z - v2.z, 2) + powf(w - v2.w, 2)); };
 
-		inline Vector4 Normalised() const {
-			Vector4 copy = Vector4(x, y, z, w);
+		[[nodiscard]] Vector4 Normalised() const {
+			auto copy = Vector4(x, y, z, w);
 			copy.Normalise();
 			return copy;
 		}
 
-		inline std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
-			std::string xStr = fmtArgs.AsInt ? std::to_string((int)x) : std::to_string(x);
-			std::string yStr = fmtArgs.AsInt ? std::to_string((int)y) : std::to_string(y);
-			std::string zStr = fmtArgs.AsInt ? std::to_string((int)z) : std::to_string(z);
-			std::string wStr = fmtArgs.AsInt ? std::to_string((int)w) : std::to_string(w);
+		[[nodiscard]] std::string ToString(const PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
+			const std::string xStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(x)) : std::to_string(x);
+			const std::string yStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(y)) : std::to_string(y);
+			const std::string zStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(z)) : std::to_string(z);
+			const std::string wStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(w)) : std::to_string(w);
 			if (fmtArgs.Pretty) {
 				return std::string("x: " + xStr + "\ny: " + yStr + "\nz: " + zStr + "\nw: " + wStr);
-			} else {
-				return std::string("{" + xStr + ", " + yStr + ", " + zStr + ", " + wStr + "}");
 			}
+			return std::string("{" + xStr + ", " + yStr + ", " + zStr + ", " + wStr + "}");
 		}
 	};
 }

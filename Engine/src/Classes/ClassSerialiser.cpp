@@ -96,17 +96,17 @@ namespace Refraction::Utilities {
 
 	json ClassSerialiser::Serialise(Math::Vector2 vec) {
 		json result;
-		if (vec.x != vec.x) vec.x = 0;
-		if (vec.y != vec.y) vec.y = 0;
+		if (Math::IsNaN(vec.x)) vec.x = 0;
+		if (Math::IsNaN(vec.y)) vec.y = 0;
 		result["X"] = vec.x;
 		result["Y"] = vec.y;
 		return result;
 	}
 	json ClassSerialiser::Serialise(Math::Vector3 vec) {
 		json result;
-		if (vec.x != vec.x) vec.x = 0;
-		if (vec.y != vec.y) vec.y = 0;
-		if (vec.z != vec.z) vec.z = 0;
+		if (Math::IsNaN(vec.x)) vec.x = 0;
+		if (Math::IsNaN(vec.y)) vec.y = 0;
+		if (Math::IsNaN(vec.z)) vec.z = 0;
 		result["X"] = vec.x;
 		result["Y"] = vec.y;
 		result["Z"] = vec.z;
@@ -114,10 +114,10 @@ namespace Refraction::Utilities {
 	}
 	json ClassSerialiser::Serialise(Math::Vector4 vec) {
 		json result;
-		if (vec.x != vec.x) vec.x = 0;
-		if (vec.y != vec.y) vec.y = 0;
-		if (vec.z != vec.z) vec.z = 0;
-		if (vec.w != vec.w) vec.w = 0;
+		if (Math::IsNaN(vec.x)) vec.x = 0;
+		if (Math::IsNaN(vec.y)) vec.y = 0;
+		if (Math::IsNaN(vec.z)) vec.z = 0;
+		if (Math::IsNaN(vec.w)) vec.w = 0;
 		result["X"] = vec.x;
 		result["Y"] = vec.y;
 		result["Z"] = vec.z;
@@ -126,24 +126,14 @@ namespace Refraction::Utilities {
 	}
 	json ClassSerialiser::Serialise(Math::Quaternion quat) {
 		json result;
-		if (quat.x != quat.x) quat.x = 0;
-		if (quat.y != quat.y) quat.y = 0;
-		if (quat.z != quat.z) quat.z = 0;
-		if (quat.w != quat.w) quat.w = 0;
+		if (Math::IsNaN(quat.x)) quat.x = 0;
+		if (Math::IsNaN(quat.y)) quat.y = 0;
+		if (Math::IsNaN(quat.z)) quat.z = 0;
+		if (Math::IsNaN(quat.w)) quat.w = 0;
 		result["X"] = quat.x;
 		result["Y"] = quat.y;
 		result["Z"] = quat.z;
 		result["W"] = quat.w;
-		return result;
-	}
-	json ClassSerialiser::Serialise(Math::Orientation orient) {
-		json result;
-		if (orient.mPitch != orient.mPitch) orient.mPitch = 0;
-		if (orient.mYaw != orient.mYaw) orient.mYaw = 0;
-		if (orient.mRoll != orient.mRoll) orient.mRoll = 0;
-		result["Pitch"] = orient.mPitch;
-		result["Yaw"] = orient.mYaw;
-		result["Roll"] = orient.mRoll;
 		return result;
 	}
 	json ClassSerialiser::Serialise(Math::Rect rect) {
@@ -211,16 +201,6 @@ namespace Refraction::Utilities {
 		});
 		return result;
 	}
-	Math::Orientation ClassSerialiser::DeserialiseOrientation(json data) {
-		return Math::Vector3(data.at("Pitch").get<float>(), data.at("Yaw").get<float>(), data.at("Roll").get<float>());
-	}
-	Math::Orientation ClassSerialiser::DeserialiseOrientation(const std::string& serialisedData) {
-		Math::Orientation result;
-		TryParseJSON(serialisedData, [&](const json& jsonObj) {
-			result = DeserialiseOrientation(jsonObj);
-		});
-		return result;
-	}
 	Math::Rect ClassSerialiser::DeserialiseRect(json data) {
 		return {data.at("X").get<int>(), data.at("Y").get<int>(), data.at("W").get<int>(), data.at("H").get<int>()};
 	}
@@ -245,7 +225,7 @@ namespace Refraction::Utilities {
 		Math::Transform result;
 		result.mSpatialPosition.GridIndex = DeserialiseVector3(data.at("SpatialPosition").at("GridIndex"));
 		result.mSpatialPosition.CellPosition = DeserialiseVector3(data.at("SpatialPosition").at("CellPosition"));
-		result.mOrientation = DeserialiseOrientation(data.at("Orientation"));
+		result.mOrientation = DeserialiseQuaternion(data.at("Orientation"));
 		result.mScale = DeserialiseVector3(data.at("Scale"));
 		return result;
 	}

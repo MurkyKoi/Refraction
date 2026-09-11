@@ -3,12 +3,12 @@
 namespace Refraction::Math {
 	Vector3 Matrix3::ToEulerAngles() {
 		Vector3 newVec;
-		float T1 = atan2f(m[2][1], m[2][2]);
-		float C2 = sqrtf(m[0][0] * m[0][0] + m[1][0] * m[1][0]);
-		float T2 = atan2f(-m[2][0], C2);
-		float S1 = sinf(T1);
-		float C1 = cosf(T1);
-		float T3 = atan2f(S1 * m[0][2] - C1 * m[0][1], C1 * m[1][1] - S1 * m[1][2]);
+		const float T1 = atan2f(m[2][1], m[2][2]);
+		const float C2 = sqrtf(m[0][0] * m[0][0] + m[1][0] * m[1][0]);
+		const float T2 = atan2f(-m[2][0], C2);
+		const float S1 = sinf(T1);
+		const float C1 = cosf(T1);
+		const float T3 = atan2f(S1 * m[0][2] - C1 * m[0][1], C1 * m[1][1] - S1 * m[1][2]);
 		newVec.x = -T1;
 		newVec.y = -T2;
 		newVec.z = -T3;
@@ -16,10 +16,10 @@ namespace Refraction::Math {
 	}
 
 	Quaternion Matrix3::ToQuaternion() {
-		float x = m[0][0] - m[1][1] - m[2][2];
-		float y = m[1][1] - m[0][0] - m[2][2];
-		float z = m[2][2] - m[0][0] - m[1][1];
-		float w = m[0][0] + m[1][1] + m[2][2];
+		const float x = m[0][0] - m[1][1] - m[2][2];
+		const float y = m[1][1] - m[0][0] - m[2][2];
+		const float z = m[2][2] - m[0][0] - m[1][1];
+		const float w = m[0][0] + m[1][1] + m[2][2];
 
 		int biggestIndex = 0;
 		float biggest = x;
@@ -37,19 +37,19 @@ namespace Refraction::Math {
 		}
 
 		float biggestVal = sqrtf(biggest + 1.0f) * 0.5f;
-		float mult = 0.25f / biggestVal;
+		const float mult = 0.25f / biggestVal;
 
 		switch (biggestIndex) {
 		case 0:
-			return Quaternion(biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] - m[2][1]) * mult);
+			return {biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] - m[2][1]) * mult};
 		case 1:
-			return Quaternion((m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult, (m[2][0] - m[0][2]) * mult);
+			return {(m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult, (m[2][0] - m[0][2]) * mult};
 		case 2:
-			return Quaternion((m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal, (m[0][1] - m[1][0]) * mult);
+			return {(m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal, (m[0][1] - m[1][0]) * mult};
 		case 3:
-			return Quaternion((m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult, biggestVal);
+			return {(m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult, biggestVal};
 		default:
-			return Quaternion();
+			return {};
 		}
 	}
 
@@ -88,14 +88,14 @@ namespace Refraction::Math {
 	}
 
 	Matrix4 Matrix4::Perspective(const Frustum& frustum) {
-		return Matrix4::Perspective(frustum.fovY, frustum.AspectRatio(), frustum.zNear, frustum.zFar);
+		return Perspective(frustum.fovY, frustum.AspectRatio(), frustum.zNear, frustum.zFar);
 	}
 
 	Matrix4 Matrix4::FromTranslation(const Vector3& translation) {
-		Matrix4 newMat(1);
-		newMat[0][3] = translation.x;
-		newMat[1][3] = translation.y;
-		newMat[2][3] = translation.z;
+		Matrix4 newMat;
+		newMat[3][0] = translation.x;
+		newMat[3][1] = translation.y;
+		newMat[3][2] = translation.z;
 		return newMat;
 	}
 
@@ -113,12 +113,12 @@ namespace Refraction::Math {
 		const float yz = axis.y * axis.z;
 		const float zz = axis.z * axis.z;
 
-		return Matrix4(
+		return {
 			Vector4(angCos + xx * angCos1Min, xy * angCos1Min + axis.z * angSin, xz * angCos1Min - axis.y * angSin, 0),
 			Vector4(xy * angCos1Min - axis.z * angSin, angCos * yy * angCos1Min, yz * angCos1Min + axis.x * angSin, 0),
 			Vector4(xz * angCos1Min + axis.y * angSin, yz * angCos1Min - axis.x * angSin, angCos + zz * angCos1Min, 0),
 			Vector4(0, 0, 0, 1)
-		);
+		};
 	}
 
 	Matrix4 Matrix4::FromRotationX(const float& angle) {
@@ -146,65 +146,98 @@ namespace Refraction::Math {
 		return newMat;
 	}
 
-	Matrix4 Matrix4::FromRotation(const Quaternion& rotation) {
-		Matrix4 newMat(1);
-		Vector3 rot = rotation.ToEulerAngles();
-		Matrix4 rx = FromRotationX(rot.x);
-		Matrix4 ry = FromRotationY(rot.y);
-		Matrix4 rz = FromRotationZ(rot.z);
+	Matrix4 Matrix4::FromRotation(const Quaternion& quat) {
+		if (IsNaN(quat.x) || IsNaN(quat.y) || IsNaN(quat.z) || IsNaN(quat.w)) return {};
 
-		return rz * ry * rx;
+		Matrix4 result; // Identity Matrix
+
+		float xx = quat.x * quat.x; float yy = quat.y * quat.y; float zz = quat.z * quat.z;
+		float xy = quat.x * quat.y; float xz = quat.x * quat.z; float yz = quat.y * quat.z;
+		float wx = quat.w * quat.x; float wy = quat.w * quat.y; float wz = quat.w * quat.z;
+
+		result[0][0] = 1.0f - 2.0f * (yy + zz);
+		result[0][1] = 2.0f * (xy - wz);
+		result[0][2] = 2.0f * (xz + wy);
+
+		result[1][0] = 2.0f * (xy + wz);
+		result[1][1] = 1.0f - 2.0f * (xx + zz);
+		result[1][2] = 2.0f * (yz - wx);
+
+		result[2][0] = 2.0f * (xz - wy);
+		result[2][1] = 2.0f * (yz + wx);
+		result[2][2] = 1.0f - 2.0f * (xx + yy);
+
+		return result;
 	}
-	Matrix4 Matrix4::FromRotationZYX(const Quaternion& rotation) {
-		Matrix4 newMat(1);
-		Vector3 rot = rotation.ToEulerAngles();
+
+	Matrix4 Matrix4::FromRotationZYX(const Quaternion& quat) {
+		const Vector3 rot = quat.ToEulerAngles();
 		Matrix4 rx = FromRotationX(rot.x);
-		Matrix4 ry = FromRotationY(rot.y);
-		Matrix4 rz = FromRotationZ(rot.z);
+		const Matrix4 ry = FromRotationY(rot.y);
+		const Matrix4 rz = FromRotationZ(rot.z);
 
 		return rx * ry * rz;
 	}
 
 	Matrix4 Matrix4::FromScale(const Vector3& scale) {
-		Matrix4 newMat(1);
+		Matrix4 newMat;
 		newMat[0][0] = scale.x;
 		newMat[1][1] = scale.y;
 		newMat[2][2] = scale.z;
-		newMat[3][3] = 1.0f;
 		return newMat;
 	}
 
-	Matrix4 Matrix4::Rotate(Quaternion quat) {
-		float angle;
-		Vector3 axis;
-		quat.ToAxisAngle(angle, axis);
-		const float cosA = cosf(angle);
-		const float sinA = sinf(angle);
+	Matrix4 Matrix4::Translate(const Vector3 &v) {
+		Matrix4 result(*this);
 
-		Vector3 temp(axis * (1.0f - cosA));
+		result[3][0] += m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z;
+		result[3][1] += m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z;
+		result[3][2] += m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z;
 
-		Matrix4 rotMat;
-		rotMat[0][0] = cosA + temp.x * axis.x;
-		rotMat[0][1] = temp.x * axis.y + sinA * axis.z;
-		rotMat[0][2] = temp.x * axis.z - sinA * axis.y;
-
-		rotMat[1][0] = temp.y * axis.x - sinA * axis.z;
-		rotMat[1][1] = cosA + temp.y * axis.y;
-		rotMat[1][2] = temp.y * axis.z + sinA * axis.x;
-
-		rotMat[2][0] = temp.z * axis.x + sinA * axis.y;
-		rotMat[2][1] = temp.z * axis.y - sinA * axis.x;
-		rotMat[2][2] = cosA + temp.z * axis.z;
-
-		Matrix4 result;
-		result[0] = (*this)[0] * rotMat[0][0] + (*this)[1] * rotMat[0][1] + (*this)[2] * rotMat[0][2];
-		result[1] = (*this)[0] * rotMat[1][0] + (*this)[1] * rotMat[1][1] + (*this)[2] * rotMat[1][2];
-		result[2] = (*this)[0] * rotMat[2][0] + (*this)[1] * rotMat[2][1] + (*this)[2] * rotMat[2][2];
-		result[3] = (*this)[3];
 		return result;
 	}
 
-	Matrix4 Matrix4::Scale(Vector3 scale) {
+	Matrix4 Matrix4::Rotate(const Quaternion& quat) {
+		Matrix4 lhs = *this;
+
+	    float xx = quat.x * quat.x; float yy = quat.y * quat.y; float zz = quat.z * quat.z;
+	    float xy = quat.x * quat.y; float xz = quat.x * quat.z; float yz = quat.y * quat.z;
+	    float wx = quat.w * quat.x; float wy = quat.w * quat.y; float wz = quat.w * quat.z;
+
+	    float r00 = 1.0f - 2.0f * (yy + zz);
+	    float r01 = 2.0f * (xy - wz);
+	    float r02 = 2.0f * (xz + wy);
+
+	    float r10 = 2.0f * (xy + wz);
+	    float r11 = 1.0f - 2.0f * (xx + zz);
+	    float r12 = 2.0f * (yz - wx);
+
+	    float r20 = 2.0f * (xz - wy);
+	    float r21 = 2.0f * (yz + wx);
+	    float r22 = 1.0f - 2.0f * (xx + yy);
+
+	    Matrix4 result;
+
+	    result[0][0] = lhs[0][0] * r00 + lhs[0][1] * r10 + lhs[0][2] * r20;
+	    result[0][1] = lhs[0][0] * r01 + lhs[0][1] * r11 + lhs[0][2] * r21;
+	    result[0][2] = lhs[0][0] * r02 + lhs[0][1] * r12 + lhs[0][2] * r22;
+	    result[0][3] = lhs[0][3];
+
+	    result[1][0] = lhs[1][0] * r00 + lhs[1][1] * r10 + lhs[1][2] * r20;
+	    result[1][1] = lhs[1][0] * r01 + lhs[1][1] * r11 + lhs[1][2] * r21;
+	    result[1][2] = lhs[1][0] * r02 + lhs[1][1] * r12 + lhs[1][2] * r22;
+	    result[1][3] = lhs[1][3];
+
+
+	    result[3][0] = lhs[3][0] * r00 + lhs[3][1] * r10 + lhs[3][2] * r20;
+	    result[3][1] = lhs[3][0] * r01 + lhs[3][1] * r11 + lhs[3][2] * r21;
+	    result[3][2] = lhs[3][0] * r02 + lhs[3][1] * r12 + lhs[3][2] * r22;
+	    result[3][3] = lhs[3][3];
+
+	    return result;
+	}
+
+	Matrix4 Matrix4::Scale(const Vector3& scale) {
 		Matrix4 result(*this);
 		result[0] *= scale.x;
 		result[1] *= scale.y;
@@ -214,12 +247,12 @@ namespace Refraction::Math {
 
 	Vector3 Matrix4::ToEulerAngles() {
 		Vector3 newVec;
-		float T1 = atan2f(m[2][1], m[2][2]);
-		float C2 = sqrtf(m[0][0] * m[0][0] + m[1][0] * m[1][0]);
-		float T2 = atan2f(-m[2][0], C2);
-		float S1 = sinf(T1);
-		float C1 = cosf(T1);
-		float T3 = atan2f(S1 * m[0][2] - C1 * m[0][1], C1 * m[1][1] - S1 * m[1][2]);
+		const float T1 = atan2f(m[2][1], m[2][2]);
+		const float C2 = sqrtf(m[0][0] * m[0][0] + m[1][0] * m[1][0]);
+		const float T2 = atan2f(-m[2][0], C2);
+		const float S1 = sinf(T1);
+		const float C1 = cosf(T1);
+		const float T3 = atan2f(S1 * m[0][2] - C1 * m[0][1], C1 * m[1][1] - S1 * m[1][2]);
 		newVec.x = -T1;
 		newVec.y = -T2;
 		newVec.z = -T3;
@@ -227,10 +260,10 @@ namespace Refraction::Math {
 	}
 
 	Quaternion Matrix4::ToQuaternion() {
-		float x = m[0][0] - m[1][1] - m[2][2];
-		float y = m[1][1] - m[0][0] - m[2][2];
-		float z = m[2][2] - m[0][0] - m[1][1];
-		float w = m[0][0] + m[1][1] + m[2][2];
+		const float x = m[0][0] - m[1][1] - m[2][2];
+		const float y = m[1][1] - m[0][0] - m[2][2];
+		const float z = m[2][2] - m[0][0] - m[1][1];
+		const float w = m[0][0] + m[1][1] + m[2][2];
 
 		int biggestIndex = 0;
 		float biggest = x;
@@ -248,58 +281,25 @@ namespace Refraction::Math {
 		}
 
 		float biggestVal = sqrtf(biggest + 1.0f) * 0.5f;
-		float mult = 0.25f / biggestVal;
+		const float mult = 0.25f / biggestVal;
 
 		switch (biggestIndex) {
-		case 0:
-			return Quaternion(biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] - m[2][1]) * mult);
-		case 1:
-			return Quaternion((m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult, (m[2][0] - m[0][2]) * mult);
-		case 2:
-			return Quaternion((m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal, (m[0][1] - m[1][0]) * mult);
+			case 0:
+				return {biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] - m[2][1]) * mult};
+			case 1:
+				return {(m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult, (m[2][0] - m[0][2]) * mult};
+			case 2:
+				return {(m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal, (m[0][1] - m[1][0]) * mult};
 		case 3:
-			return Quaternion((m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult, biggestVal);
+			return {(m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult, biggestVal};
 		default:
-			return Quaternion();
+			return {};
 		}
 	}
 
-	Matrix4 Matrix4::FromRotation(const Orientation& rotation) {
-		auto vec = rotation.ToVector3();
-		Matrix4 rx = FromRotationX(ToRadians(vec.x));
-		Matrix4 ry = FromRotationY(ToRadians(vec.y));
-		Matrix4 rz = FromRotationZ(ToRadians(vec.z));
+	Vector3 Matrix4::GetTranslation() { return {m[0][3], m[1][3], m[2][3]}; }
 
-		return rz * ry * rx;
-	}
-
-	Matrix4 Matrix4::FromRotationZYX(const Orientation& rotation) {
-		auto vec = rotation.ToVector3();
-		Matrix4 rx = FromRotationX(ToRadians(vec.x));
-		Matrix4 ry = FromRotationY(ToRadians(vec.y));
-		Matrix4 rz = FromRotationZ(ToRadians(vec.z));
-
-		return rx * ry * rz;
-	}
-
-	Matrix4 Matrix4::Rotate(Orientation orientation) {
-		return (*this) * Matrix4::FromRotation(orientation);
-	}
-
-	Orientation Matrix4::ToOrientation() {
-		float T1 = atan2f(m[2][1], m[2][2]);
-		float C2 = sqrtf(m[0][0] * m[0][0] + m[1][0] * m[1][0]);
-		float T2 = atan2f(-m[2][0], C2);
-		float S1 = sinf(T1);
-		float C1 = cosf(T1);
-		float T3 = atan2f(S1 * m[0][2] - C1 * m[0][1], C1 * m[1][1] - S1 * m[1][2]);
-
-		return Orientation(Vector3(-T1, -T2, -T3));
-	}
-
-	Vector3 Matrix4::GetTranslation() { return Vector3(m[0][3], m[1][3], m[2][3]); }
-
-	Vector3 Matrix4::GetScale() { return Vector3(m[0][0], m[1][1], m[2][2]); }
+	Vector3 Matrix4::GetScale() { return {m[0][0], m[1][1], m[2][2]}; }
 
 	Matrix4 Matrix4::Inverse() {
 		float c0 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
@@ -355,7 +355,6 @@ namespace Refraction::Math {
 
 		float OneOverDeterminant = 1.0f / d1;
 
-		return invMat * OneOverDeterminant;
+		return invMat * Matrix4(OneOverDeterminant);
 	}
-
 }

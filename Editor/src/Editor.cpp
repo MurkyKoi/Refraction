@@ -8,9 +8,9 @@
 namespace Refraction::Editor {
 	class EditorInstance : public Engine::Instance {
 	public:
-		EditorInstance() : Engine::Instance() {
+		EditorInstance() {
 			try {
-				mImGuiImpl = Common::NewShared<Editor::Platform::OpenGL::ImGuiImpl>(mWindow);
+				mImGuiImpl = Common::NewShared<Platform::OpenGL::ImGuiImpl>(mWindow);
 				mLayerStack->PushLayer(Common::NewShared<EditorLayer>(mLayerStack, mProjectInstance, mWindow, mImGuiImpl));
 			} catch (const std::runtime_error& err) {
 				Log::SError("Critical error encountered during editor startup: " + std::string(err.what()));
@@ -20,7 +20,7 @@ namespace Refraction::Editor {
 			}
 		}
 	private:
-		Common::Shared<Editor::Platform::OpenGL::ImGuiImpl> mImGuiImpl;
+		Common::Shared<Platform::OpenGL::ImGuiImpl> mImGuiImpl;
 	};
 }
 

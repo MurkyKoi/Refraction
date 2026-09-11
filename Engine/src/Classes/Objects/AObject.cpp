@@ -127,12 +127,8 @@ namespace Refraction::Objects {
 		});
 	}
 
-	Math::Transform AObject::GetWorldTransform() const {
-		auto transform = mTransform;
-		if (mParent) {
-			auto result = mTransform.ToMatrix() * mParent->GetWorldTransform().ToMatrix();
-			transform = Math::Transform::FromMatrix(result);
-		}
-		return transform;
+	Math::Matrix4 AObject::GetWorldMatrix() const {
+		if (mParent) return mTransform.ToMatrix() * mParent->GetWorldMatrix();
+		return mTransform.ToMatrix();
 	}
 }

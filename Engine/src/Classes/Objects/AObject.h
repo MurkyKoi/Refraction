@@ -85,7 +85,7 @@ namespace Refraction::Objects {
 		[[nodiscard]] UUID GetUUID() const { return mUUID; }
 
 		// Returns the world transform of this object (multiplied with ancestors)
-		Math::Transform GetWorldTransform() const;
+		Math::Matrix4 GetWorldMatrix() const;
 
 		// Returns a serialised copy of the object and its Components and children
 		virtual nlohmann::json Serialise();

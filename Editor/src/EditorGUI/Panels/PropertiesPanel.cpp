@@ -8,9 +8,11 @@
 #include "PropertiesPanel.h"
 
 namespace Refraction::Editor::GUI {
+	static bool ResetRotationCache = false;
+	static UUIDValue LastSelectedUUID = 0;
 	static void DrawTransformControls(Math::Transform& transform, std::string uid) {
 		if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGuiSliderFlags flags = ImGuiSliderFlags_ColorMarkers;
+			constexpr ImGuiSliderFlags flags = ImGuiSliderFlags_ColorMarkers;
  
 			auto& cellPos = transform.mSpatialPosition.CellPosition;
 			float guiPos[3] = { cellPos.x, cellPos.y, cellPos.z };
@@ -19,13 +21,19 @@ namespace Refraction::Editor::GUI {
 			cellPos.x = guiPos[0];
 			cellPos.y = guiPos[1];
 			cellPos.z = guiPos[2];
-			auto& rotation = transform.mOrientation;
 			ImGui::Text("Rotation");
-			float guiRot[3] = { rotation.mPitch, rotation.mYaw, rotation.mRoll };
-			ImGui::DragFloat3(std::format("##Rotation_{}", uid).c_str(), guiRot, 0.01f, 0, 0, "%.3f", flags);
-			rotation.mPitch = guiRot[0];
-			rotation.mYaw = guiRot[1];
-			rotation.mRoll = guiRot[2];
+			static auto rotation = Math::Vector3();
+
+			float guiRot[3] = { rotation.x, rotation.y, rotation.z };
+			if (ImGui::DragFloat3(std::format("##Rotation_{}", uid).c_str(), guiRot, 1.00f, 0, 0, "%.3f", flags)) {
+				rotation.x = guiRot[0];
+				rotation.y = guiRot[1];
+				rotation.z = guiRot[2];
+				transform.mOrientation = Math::Quaternion::FromEulerAngles(rotation);
+			} else if (!ImGui::IsItemActive() || ResetRotationCache) {
+				rotation = transform.mOrientation.ToEulerAngles();
+				ResetRotationCache = false;
+			}
 			auto& scale = transform.mScale;
 			float guiScale[3] = { scale.x, scale.y, scale.z };
 			ImGui::Text("Scale");
@@ -34,7 +42,7 @@ namespace Refraction::Editor::GUI {
 			scale.y = guiScale[1];
 			scale.z = guiScale[2];
 
-			ImGui::Text(std::format("As Matrix4: {}", transform.ToMatrix().ToString({ .Pretty = false })));
+			ImGui::Text(std::format("As Matrix4: {}", transform.ToMatrix().ToString({ .Pretty = true })));
 
 			ImGui::TreePop();
 		}
@@ -43,7 +51,7 @@ namespace Refraction::Editor::GUI {
 
 	static void DrawComponentProperties(Common::Shared<Components::AComponent> component) {
 		std::string compFullTypeName = typeid(*component).name();
-		auto compTypeName = compFullTypeName.substr(compFullTypeName.find_last_of(":") + 1);
+		auto compTypeName = compFullTypeName.substr(compFullTypeName.find_last_of(':') + 1);
 		ImGui::Text("Component Type: " + compTypeName);
 		ImGui::Text("UUID: " + component->GetUUID().AsString());
 
@@ -51,7 +59,7 @@ namespace Refraction::Editor::GUI {
 			auto model = casted->mModel.lock();
 			if (model) {
 				Common::Ref<Assets::ModelMetadata> metaWeak;
-				Engine::AssetManager::Try([&](Common::Shared<Engine::AssetManager> manager) {
+				Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& manager) {
 					metaWeak = manager->FetchMetadata<Assets::ModelMetadata>(model->GetUUID());
 				});
 				if (auto meta = metaWeak.lock()) {
@@ -101,15 +109,21 @@ namespace Refraction::Editor::GUI {
 		auto& obj = EditorState::Temp.SelectedObject;
 		if (!obj) {
 			ImGui::Text("No object selected");
+			ResetRotationCache = true;
 		} else {
 			ImGui::Text("Instance Name: " + obj->mInstanceName);
-			std::string objFullTypeName = typeid(*obj).name();
-			auto objTypeName = objFullTypeName.substr(objFullTypeName.find_last_of(":") + 1);
+			std::string objFullTypeName = typeid(obj).name();
+			auto objTypeName = objFullTypeName.substr(objFullTypeName.find_last_of(':') + 1);
 			ImGui::Text("Object Type: " + objTypeName);
-			ImGui::Text("UUID: " + obj->GetUUID().AsString());
+			const auto uuid = obj->GetUUID();
+			if (uuid.AsInt() != LastSelectedUUID) {
+				LastSelectedUUID = uuid.AsInt();
+				ResetRotationCache = true;
+			}
+			ImGui::Text("UUID: " + uuid.AsString());
 			ImGui::Separator();
 
-			ImGui::Text(std::format("World Transform: {}", obj->GetWorldTransform().ToMatrix().ToString({ .Pretty = true })));
+			ImGui::Text(std::format("World Transform: {}", obj->GetWorldMatrix().ToString({ .Pretty = true })));
 			DrawTransformControls(obj->mTransform, "Object");
 
 			ImGui::Separator();

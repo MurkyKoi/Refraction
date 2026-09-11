@@ -2,7 +2,7 @@
 
 #include <Math/Common.h>
 #include <Math/Vector.h>
-#include <Math/Orientation.h>
+#include <Math/Quaternion.h>
 #include <Math/Matrix.h>
 
 namespace Refraction::Math {
@@ -11,52 +11,52 @@ namespace Refraction::Math {
 		Vector3 GridIndex = Vector3::Zero();
 		Vector3 CellPosition = Vector3::Zero();
 
-		[[nodiscard]] inline Vector3 ToWorld() const { return CellPosition + (GridIndex * SpatialCellSize); }
-		void Translate(Vector3 delta);
+		[[nodiscard]] Vector3 ToWorld() const { return CellPosition + (GridIndex * SpatialCellSize); }
+		void Translate(const Vector3& delta);
 	};
 
 	class Transform {
 	public:
 		SpatialPosition mSpatialPosition;
-		Orientation mOrientation;
+		Quaternion mOrientation;
 		Vector3 mScale;
 
 		Transform();
-		Transform(const Vector3& pos);
+
+		explicit Transform(const Vector3& pos);
 
 		// Creates a Transform looking at a target
-		static Transform FromLookAt(const Vector3& eye, Vector3 target, Vector3 targetUp = Vector3::Up());
+		static Transform FromLookAt(const Vector3& eye, const Vector3& target, const Vector3& targetUp = Vector3::Up());
 		// Creates a Transform from a Matrix4
 		static Transform FromMatrix(Matrix4& mat);
 
-		inline void Translate(const Vector3 &delta) { mSpatialPosition.Translate(delta); }
+		void Translate(const Vector3 &delta) { mSpatialPosition.Translate(delta); }
 		// Rotate using an angle (degrees) axis
-		void Rotate(float angle, Vector3 axis);
+		void Rotate(float angle, const Vector3 &axis);
 		// Rotate using Euler angles (degrees)
-		void Rotate(Vector3 delta);
+		void Rotate(const Vector3 &delta);
 		// Rotate using a Quaternion
-		void Rotate(Orientation delta);
-		void Scale(Vector3 delta);
+		void Rotate(const Quaternion& delta);
+		void Scale(const Vector3 &delta);
 		// Rotates the Transform to look at a target
-		void LookAt(Vector3 target, Vector3 targetUp = Vector3::Up());
+		void LookAt(const Vector3& target, const Vector3& targetUp = Vector3::Up());
 
 		// Generates the Transform's matrix
 		[[nodiscard]] Matrix4 ToMatrix() const;
-		[[nodiscard]] inline Vector3 GetWorldPosition() const { return mSpatialPosition.ToWorld(); }
-		[[nodiscard]] inline Vector3 GetForwardVector() const { return mOrientation.ForwardVector(); }
-		[[nodiscard]] inline Vector3 GetRightVector() const { return mOrientation.RightVector(); }
-		[[nodiscard]] inline Vector3 GetUpVector() const { return mOrientation.UpVector(); }
+		[[nodiscard]] Vector3 GetWorldPosition() const { return mSpatialPosition.ToWorld(); }
+		[[nodiscard]] Vector3 GetForwardVector() const { return mOrientation.Forward(); }
+		[[nodiscard]] Vector3 GetRightVector() const { return mOrientation.Right(); }
+		[[nodiscard]] Vector3 GetUpVector() const { return mOrientation.Up(); }
 
-		[[nodiscard]] inline std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
-			auto gridIndexStr = mSpatialPosition.GridIndex.ToString({ .AsInt = true, .Pretty = fmtArgs.Pretty });
-			auto cellPosStr = mSpatialPosition.CellPosition.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
-			auto orientationStr = mOrientation.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
-			auto scaleStr = mScale.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
+		[[nodiscard]] std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
+			const auto gridIndexStr = mSpatialPosition.GridIndex.ToString({ .AsInt = true, .Pretty = fmtArgs.Pretty });
+			const auto cellPosStr = mSpatialPosition.CellPosition.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
+			const auto orientationStr = mOrientation.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
+			const auto scaleStr = mScale.ToString({ .AsInt = fmtArgs.AsInt, .Pretty = fmtArgs.Pretty });
 			if (fmtArgs.Pretty) {
 				return std::string("Position: [GridIndex: " + gridIndexStr + ", CellPosition: " + cellPosStr + "]\nOrientation: " + orientationStr + "\nScale: " + scaleStr);
-			} else {
-				return std::string("{[" + gridIndexStr + ", " + cellPosStr + "], " + orientationStr + ", " + scaleStr + "}");
 			}
+			return std::string("{[" + gridIndexStr + ", " + cellPosStr + "], " + orientationStr + ", " + scaleStr + "}");
 		}
 	};
 }

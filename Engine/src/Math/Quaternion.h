@@ -17,7 +17,7 @@ namespace Refraction::Math {
 		float w;
 
 		// Creates a Quaternion by directly setting the components
-		Quaternion(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+		Quaternion(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {}
 		// Creates an identity Quaternion
 		Quaternion() : x(0), y(0), z(0), w(1) {}
 
@@ -36,8 +36,8 @@ namespace Refraction::Math {
 		// Creates a Quaternion using a given eye and target
 		static Quaternion LookAt(const Vector3& from, const Vector3& at, const Vector3& up = Vector3::Up());
 
-		static inline bool AreSimilar(const Quaternion& q1, const Quaternion& q2) {
-			return (abs(q1.Dot(q2) - 1.0) < 0.001);
+		static bool AreSimilar(const Quaternion& q1, const Quaternion& q2) {
+			return fabs(q1.Dot(q2) - 1.0) < 0.001;
 		}
 
 		Quaternion(const Quaternion& other) {
@@ -56,32 +56,32 @@ namespace Refraction::Math {
 			return *this;
 		}
 
-		inline operator Vector4() const {
-			return Vector4(x, y, z, w);
+		explicit operator Vector4() const {
+			return {x, y, z, w};
 		}
 
 		Quaternion operator-() const {
-			return Quaternion(-x, -y, -z, -w);
+			return {-x, -y, -z, -w};
 		}
 		Quaternion operator+(const Quaternion& other) const {
-			return Quaternion(x + other.x, y + other.y, z + other.z, w + other.w);
+			return {x + other.x, y + other.y, z + other.z, w + other.w};
 		}
 		Quaternion operator-(const Quaternion& other) const {
-			return Quaternion(x - other.x, y - other.y, z - other.z, w - other.w);
+			return {x - other.x, y - other.y, z - other.z, w - other.w};
 		}
 		Quaternion operator*(const Quaternion& other) const {
-			Vector3 thisVec(x, y, z);
-			Vector3 otherVec(other.x, other.y, other.z);
+			const Vector3 thisVec(x, y, z);
+			const Vector3 otherVec(other.x, other.y, other.z);
 
-			Vector3 resultVec = otherVec * w + thisVec * other.w + thisVec.Cross(otherVec);
-			float resultW = w * other.w - thisVec.Dot(otherVec);
-			return Quaternion(resultVec.x, resultVec.y, resultVec.z, resultW);
+			const Vector3 resultVec = otherVec * w + thisVec * other.w + thisVec.Cross(otherVec);
+			const float resultW = w * other.w - thisVec.Dot(otherVec);
+			return {resultVec.x, resultVec.y, resultVec.z, resultW};
 		};
 		Quaternion operator*(const float& n) const {
-			return Quaternion(x * n, y * n, z * n, w * n);
+			return {x * n, y * n, z * n, w * n};
 		};
 		Quaternion operator/(const float& n) const {
-			return Quaternion(x / n, y / n, z / n, w / n);
+			return {x / n, y / n, z / n, w / n};
 		}
 
 		void operator+=(const Quaternion& other) {
@@ -98,10 +98,10 @@ namespace Refraction::Math {
 		}
 
 		void operator*=(const Quaternion& other) {
-			Vector3 thisVec(x, y, z);
-			Vector3 otherVec(other.x, other.y, other.z);
+			const Vector3 thisVec(x, y, z);
+			const Vector3 otherVec(other.x, other.y, other.z);
 
-			Vector3 resultVec = otherVec * w + thisVec * other.w + thisVec.Cross(otherVec);
+			const Vector3 resultVec = otherVec * w + thisVec * other.w + thisVec.Cross(otherVec);
 			x = resultVec.x;
 			y = resultVec.y;
 			z = resultVec.z;
@@ -113,6 +113,7 @@ namespace Refraction::Math {
 			z *= n;
 			w *= n;
 		}
+		Vector3 operator*(const Vector3& v) const;
 
 		bool operator==(const Quaternion& v) const {
 			return AreSimilar(*this, v);
@@ -120,42 +121,72 @@ namespace Refraction::Math {
 
 		void Normalize();
 
-		Vector3 ToEulerAngles() const;
-		bool IsZero() const;
-		float Dot(const Quaternion& other) const;
-
-		Quaternion SLerp(Quaternion other, float time) const;
-		Quaternion NLerp(Quaternion other, float time) const;
-
-		inline std::string ToString(PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
-			std::string xStr = fmtArgs.AsInt ? std::to_string((int)x) : std::to_string(x);
-			std::string yStr = fmtArgs.AsInt ? std::to_string((int)y) : std::to_string(y);
-			std::string zStr = fmtArgs.AsInt ? std::to_string((int)z) : std::to_string(z);
-			std::string wStr = fmtArgs.AsInt ? std::to_string((int)w) : std::to_string(w);
-			if (fmtArgs.Pretty) {
-				return std::string("x: " + xStr + "\ny: " + yStr + "\nz: " + zStr + "\nw: " + wStr);
-			} else {
-				return std::string("{" + xStr + ", " + yStr + ", " + zStr + ", " + wStr + "}");
-			}
+		// [[nodiscard]] Vector3 Forward() const {
+		// 	return *this * Vector3(0.0f, 0.0f, 1.0f);
+		// }
+		// [[nodiscard]] Vector3 Up() const {
+		// 	return *this * Vector3(0.0f, 1.0f, 0.0f);
+		// }
+		// [[nodiscard]] Vector3 Right() const {
+		// 	return *this * Vector3(1.0f, 0.0f, 0.0f);
+		// }
+		[[nodiscard]] Vector3 Forward() const {
+			return {
+				2.0f * (x * z + w * y),
+				2.0f * (y * z - w * x),
+				1.0f - 2.0f * (x * x + y * y)
+			};
+		}
+		[[nodiscard]] Vector3 Up() const {
+			return {
+				2.0f * (x * y - w * z),
+				1.0f - 2.0f * (x * x + z * z),
+				2.0f * (y * z + w * x)
+			};
+		}
+		[[nodiscard]] Vector3 Right() const {
+			return {
+				1.0f - 2.0f * (y * y + z * z),
+				2.0f * (x * y + w * z),
+				2.0f * (x * z - w * y)
+			};
 		}
 
-		inline Quaternion Conjugate() const { return Quaternion(-x, -y, -z, w); }
+		[[nodiscard]] Vector3 ToEulerAngles() const;
+		[[nodiscard]] bool IsZero() const;
+		[[nodiscard]] float Dot(const Quaternion& other) const;
 
-		inline Quaternion Normalized() const {
-			Quaternion copy = Quaternion(x, y, z, w);
+		[[nodiscard]] Quaternion SLerp(Quaternion other, float time) const;
+		[[nodiscard]] Quaternion NLerp(Quaternion other, float time) const;
+
+		[[nodiscard]] std::string ToString(const PrintFormatArgs fmtArgs = PrintFormatArgs()) const {
+			const std::string xStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(x)) : std::to_string(x);
+			const std::string yStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(y)) : std::to_string(y);
+			const std::string zStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(z)) : std::to_string(z);
+			const std::string wStr = fmtArgs.AsInt ? std::to_string(static_cast<int>(w)) : std::to_string(w);
+			if (fmtArgs.Pretty) {
+				return std::string("x: " + xStr + "\ny: " + yStr + "\nz: " + zStr + "\nw: " + wStr);
+			}
+			return std::string("{" + xStr + ", " + yStr + ", " + zStr + ", " + wStr + "}");
+		}
+
+		[[nodiscard]] Quaternion Conjugate() const { return {-x, -y, -z, w}; }
+
+		[[nodiscard]] Quaternion Normalized() const {
+			auto copy = Quaternion(x, y, z, w);
 			copy.Normalize();
 			return copy;
 		}
 
-		inline Quaternion Inverse() const {
-			if (IsZero()) return Quaternion(*this);
+		[[nodiscard]] Quaternion Inverse() const {
+			if (IsZero()) return *this;
 			return Conjugate() / Dot(*this);
 		}
 
-		inline void ToAxisAngle(float& angle, Vector3& axis) const {
-			float cosHalfAngle = w;
-			float halfAngle = acosf(cosHalfAngle);
-			float sinHalfAngle = sinf(halfAngle);
+		void ToAxisAngle(float& angle, Vector3& axis) const {
+			const float cosHalfAngle = w;
+			const float halfAngle = acosf(cosHalfAngle);
+			const float sinHalfAngle = sinf(halfAngle);
 			angle = halfAngle * 2;
 
 			axis.x = x / sinHalfAngle;
@@ -163,13 +194,12 @@ namespace Refraction::Math {
 			axis.z = z / sinHalfAngle;
 		};
 
-		inline void ResetNANs() {
-			if (x != x) x = 0;
-			if (y != y) y = 0;
-			if (z != z) z = 0;
-			if (w != w) w = 0;
+		void ResetNANs() {
+			if (IsNaN(x)) x = 0;
+			if (IsNaN(y)) y = 0;
+			if (IsNaN(z)) z = 0;
+			if (IsNaN(w)) w = 0;
 		}
 	};
-	Vector3 operator*(const Quaternion& q, const Vector3& v);
-	Vector3 operator*(Vector3 v, const Quaternion& q);
+	Vector3 operator*(const Vector3& v, const Quaternion& q);
 }

@@ -11,7 +11,6 @@
 #include <Classes/Assets/Asset.h>
 #include <Math/Vector.h>
 #include <Math/Quaternion.h>
-#include <Math/Orientation.h>
 #include <Math/Rect.h>
 #include <Math/Frustum.h>
 #include <Math/Transform.h>
@@ -48,7 +47,6 @@ namespace Refraction::Utilities {
 		static nlohmann::json Serialise(Math::Vector3 vec);
 		static nlohmann::json Serialise(Math::Vector4 vec);
 		static nlohmann::json Serialise(Math::Quaternion quat);
-		static nlohmann::json Serialise(Math::Orientation orient);
 		static nlohmann::json Serialise(Math::Rect rect);
 		static nlohmann::json Serialise(Math::Frustum frustum);
 		static nlohmann::json Serialise(const Math::Transform& transform);
@@ -60,8 +58,6 @@ namespace Refraction::Utilities {
 		static Math::Vector4 DeserialiseVector4(const std::string& serialisedData);
 		static Math::Quaternion DeserialiseQuaternion(nlohmann::json data);
 		static Math::Quaternion DeserialiseQuaternion(const std::string& serialisedData);
-		static Math::Orientation DeserialiseOrientation(nlohmann::json data);
-		static Math::Orientation DeserialiseOrientation(const std::string& serialisedData);
 		static Math::Rect DeserialiseRect(nlohmann::json data);
 		static Math::Rect DeserialiseRect(const std::string& serialisedData);
 		static Math::Frustum DeserialiseFrustum(nlohmann::json data);

@@ -32,6 +32,7 @@ namespace Refraction::Assets {
 		std::vector<Common::Ref<Material>> mMaterials;
 
 		void OnLoadAsset(Common::Shared<AssetMetadata> metadata) override;
+		void OnSave() override;
 	private:
 		unsigned int mID = 0;
 	};

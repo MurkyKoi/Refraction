@@ -48,11 +48,12 @@ namespace Refraction::Assets {
 		void OnLoadAsset(Common::Shared<AssetMetadata> metadata) override;
 	private:
 		static std::unordered_map<std::string, uint64_t> LoadedShaders;
+		static bool CheckLogErrors(GLuint shader, const std::string& type);
 
 		unsigned int mID = 0;
 		std::string mName;
 
-		bool CheckLogErrors(GLuint shader, std::string type);
+		GLint GetUniformLocation(std::string name) const;
 	};
 
 	RFCT_ASSET_REGISTERFACTORY(Shader)

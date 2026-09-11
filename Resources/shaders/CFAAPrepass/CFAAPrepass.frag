@@ -17,8 +17,8 @@ uniform sampler2D tSpecular;
 
 void main()
 {    
-    gDiffuse.rgb = texture(tDiffuse, TexCoords).rgb;
+    gDiffuse = texture(tDiffuse, TexCoords).rgb;
     gNormal = normalize(Normal);
     gPosition = FragPos;
-    gSMR.r = texture(tSpecular, TexCoords).r;
+    gSMR = vec3(texture(tSpecular, TexCoords).r, 0.0, 0.0);
 }

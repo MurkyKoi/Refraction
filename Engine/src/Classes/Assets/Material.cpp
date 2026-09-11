@@ -11,7 +11,7 @@ namespace Refraction::Assets {
 		});
 	}
 
-	void Material::Activate() {
+	void Material::Activate() const {
 		if (const auto img = mDiffuse.lock()) {
 			if (const auto tex = img->mTexture.lock()) {
 				tex->Activate(0);
@@ -25,10 +25,9 @@ namespace Refraction::Assets {
 		//mNormal->Activate(2);
 
 		if (const auto shader = mShader.lock()) {
+			shader->Activate();
 			shader->SetUniformInt(RFCT_TEXTURE_TYPE_DIFFUSE, 0);
 			shader->SetUniformInt(RFCT_TEXTURE_TYPE_SPECULAR, 1);
-
-			shader->Activate();
 		}
 	}
 }

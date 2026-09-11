@@ -65,7 +65,7 @@ namespace Refraction::Utilities {
 
 	Common::Shared<Assets::Asset> ClassSerialiser::DeserialiseAsset(const Common::Shared<Assets::AssetMetadata>& metadata) {
 		Common::Shared<Assets::Asset> deserialised = Engine::ClassFactory::CreateAsset(metadata->AssetType);
-		Log::SInfo("Loading asset of type " + metadata->AssetType);
+		//Log::SInfo("Loading asset of type " + metadata->AssetType);
 		deserialised->LoadAsset(metadata->AssetUUID);
 		return deserialised;
 	}
@@ -77,7 +77,7 @@ namespace Refraction::Utilities {
 		});
 
 		Common::Shared<Objects::AObject> deserialised = Engine::ClassFactory::CreateObject(objectClassName);
-		Log::SInfo("Deserialising object of type " + objectClassName);
+		//Log::SInfo("Deserialising object of type " + objectClassName);
 		deserialised->Deserialise(serialisedData);
 		return deserialised;
 	}
@@ -89,7 +89,7 @@ namespace Refraction::Utilities {
 		});
 
 		Common::Shared<Components::AComponent> deserialised = Engine::ClassFactory::CreateComponent(compClassName);
-		Log::SInfo("Deserialising component of type " + compClassName);
+		//Log::SInfo("Deserialising component of type " + compClassName);
 		deserialised->Deserialise(serialisedData);
 		return deserialised;
 	}

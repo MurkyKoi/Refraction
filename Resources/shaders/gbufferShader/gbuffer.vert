@@ -28,6 +28,9 @@ void main()
 	mat3 normalMatrix = transpose(inverse(mat3(modelTransform)));
 	VertOut.Normal = normalMatrix * aNormal;
 
-	gl_Position = ubo.projMat * ubo.viewMat * worldPos;
-	VertOut.ScreenTexCoords = (ubo.projMat * ubo.viewMat * vec4(aTexCoords, 0.0, 1.0)).xy;
+	vec4 clipPos = ubo.projMat * ubo.viewMat * worldPos;
+	gl_Position = clipPos;
+
+	vec2 ndc = clipPos.xy / clipPos.w;
+	VertOut.ScreenTexCoords = ndc * 0.5 + 0.5;
 }

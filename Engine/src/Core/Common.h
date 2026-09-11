@@ -83,40 +83,44 @@ namespace Refraction {
 		typedef std::function<void(Colour colour, std::string body, bool newline)> LogCallback;
 
 		static std::string GenerateTimestamp();
-		static void SInfo(std::string message);
-		static void SWarn(std::string message);
-		static void SError(std::string message);
+		static void SInfo(const std::string& message);
+		static void SWarn(const std::string& message);
+		static void SError(const std::string& message);
 		static void AddLogCallback(const LogCallback& callback) { Callbacks.push_back(callback); }
 		static void InitConsoleLog();
 
 		static Log Render;
 		static Log Physics;
 		static Log Runtime;
+		static Log Project;
 		static Log Editor;
 
 		Log() : mName("Refraction") {}
-		Log(std::string name) : mName(std::move(name)) {}
+		explicit Log(std::string name) : mName(std::move(name)) {}
 
-		void Info(std::string message);
+		void Info(const std::string &message) const { InternalInfo(message); }
 		template<typename... Args>
-		void Info(std::string format, Args&&... args) {
-			Info(std::format(format, args...));
+		void Info(const std::string format, Args&&... args) {
+			InternalInfo(std::vformat(format, std::make_format_args(args...)));
 		}
-		void Warn(std::string message);
+		void Warn(const std::string &message) const { InternalWarn(message); }
 		template<typename... Args>
-		void Warn(std::string format, Args&&... args) {
-			Warn(std::format(format, args...));
+		void Warn(const std::string format, Args&&... args) {
+			InternalWarn(std::vformat(format, std::make_format_args(args...)));
 		}
-		void Error(std::string message);
+		void Error(const std::string &message) const { InternalError(message); }
 		template<typename... Args>
-		void Error(std::string format, Args&&... args) {
-			Error(std::format(format, args...));
+		void Error(const std::string format, Args&&... args) {
+			InternalError(std::vformat(format, std::make_format_args(args...)));
 		}
 	protected:
 		static std::vector<LogCallback> Callbacks;
 		std::string mName;
 	private:
-		static void GenerateLog(const std::string& logName, const std::string &message, const std::string& logType, Colour printColour, bool printStack = false, Colour typeColour = { 0,0,0 });
+		void InternalInfo(const std::string& message) const;
+		void InternalWarn(const std::string& message) const;
+		void InternalError(const std::string& message) const;
+		static void GenerateLog(const std::string& logName, const std::string &message, const std::string& logType, Colour printColour, bool printStack = false, Colour typeColour = { .R = 0,.G = 0,.B = 0 });
 	};
 
 }

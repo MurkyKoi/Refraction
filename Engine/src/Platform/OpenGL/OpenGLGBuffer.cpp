@@ -8,151 +8,105 @@
 
 namespace Refraction::Engine::Platform {
 	OpenGLGBuffer::~OpenGLGBuffer() {
-		Cleanup();
+		OpenGLGBuffer::Cleanup();
 	}
 
-	bool OpenGLGBuffer::Init(unsigned int viewWidth, unsigned int viewHeight) {
+	bool OpenGLGBuffer::Init(const int viewWidth, const int viewHeight) {
 		// Init framebuffer
 		glGenFramebuffers(1, &mFBID);
+		glGenFramebuffers(1, &mCFAAFBID);
+
+		return Regenerate(viewWidth, viewHeight);
+	}
+
+	bool OpenGLGBuffer::Regenerate(const int viewWidth, const int viewHeight) {
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFBID);
 
-		auto& graphicsSettings = Settings::CurrentSettings->Graphics;
-		auto scale = (graphicsSettings.CFAAEnabled) ? graphicsSettings.CFAAScale : 1;
-		int texW = viewWidth * scale;
-		int texH = viewHeight * scale;
+		const auto& graphicsSettings = Settings::CurrentSettings->Graphics;
+		const auto scale = (graphicsSettings.CFAAEnabled) ? graphicsSettings.CFAAScale : 1;
+		const int cfaaW = viewWidth * scale;
+		const int cfaaH = viewHeight * scale;
 
-		TextureStructure texStructDepth = {
-			.Width = texW,
-			.Height = texH,
-			.Format = TextureFormat::NONE,
-			.MipsEnabled = true
-		};
-		auto texStructRGB = texStructDepth;
-		texStructRGB.Format = TextureFormat::RGB8;
-		auto texStructRGBDisplay = texStructRGB;
-		texStructRGBDisplay.Width = viewWidth;
-		texStructRGBDisplay.Height = viewHeight;
-		auto texStructRGBA16F = texStructDepth;
-		texStructRGBA16F.Format = TextureFormat::RGBA16F;
+		const TextureStructure nativeDepthStruct = { .Width = cfaaW, .Height = cfaaH, .Format = TextureFormat::NONE, .MipsEnabled = false };
+		auto nativeRGBStruct = nativeDepthStruct; nativeRGBStruct.Format = TextureFormat::RGB8;
+		auto nativeRGBA16FStruct = nativeDepthStruct; nativeRGBA16FStruct.Format = TextureFormat::RGBA16F;
 
-		mDepth = Platform::ATexture::MakeTexture(texStructDepth);
-		auto tex = mDepth.lock();
-		tex->Activate(0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, texW, texH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mDepth.expired()) mDepth = ATexture::MakeTexture(nativeDepthStruct);
+		else mDepth.lock()->Regenerate(nativeDepthStruct);
 
-		mDiffuse = Platform::ATexture::MakeTexture(texStructRGB);
-		tex = mDiffuse.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mDiffuse.expired()) mDiffuse = ATexture::MakeTexture(nativeRGBStruct);
+		else mDiffuse.lock()->Regenerate(nativeRGBStruct);
 
-		mNormal = Platform::ATexture::MakeTexture(texStructRGBA16F);
-		tex = mNormal.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mNormal.expired()) mNormal = ATexture::MakeTexture(nativeRGBA16FStruct);
+		else mNormal.lock()->Regenerate(nativeRGBA16FStruct);
 
-		mPosition = Platform::ATexture::MakeTexture(texStructRGBA16F);
-		tex = mPosition.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mPosition.expired()) mPosition = ATexture::MakeTexture(nativeRGBA16FStruct);
+		else mPosition.lock()->Regenerate(nativeRGBA16FStruct);
 
-		mSMR = Platform::ATexture::MakeTexture(texStructRGB);
-		tex = mSMR.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mSMR.expired()) mSMR = ATexture::MakeTexture(nativeRGBStruct);
+		else mSMR.lock()->Regenerate(nativeRGBStruct);
 
-		mCFAAData = Platform::ATexture::MakeTexture(texStructRGBDisplay);
-		tex = mCFAAData.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mCFAAData.expired()) mCFAAData = ATexture::MakeTexture(nativeRGBStruct);
+		else mCFAAData.lock()->Regenerate(nativeRGBStruct);
 
-		mFinal = Platform::ATexture::MakeTexture(texStructRGBDisplay);
-		tex = mFinal.lock();
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+		if (mFinal.expired()) mFinal = ATexture::MakeTexture(nativeRGBStruct);
+		else mFinal.lock()->Regenerate(nativeRGBStruct);
 
-		// Frag shader outputs
-		unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
-		glDrawBuffers(5, attachments); auto result = glGetError();
+		glBindFramebuffer(GL_FRAMEBUFFER, mFBID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mDiffuse.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, mNormal.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, mPosition.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, mSMR.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, mCFAAData.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, mFinal.lock()->GetBufferID(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepth.lock()->GetBufferID(), 0);
 
-		// Check status
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			if (!status) {
-				auto result = glGetError();
-				throw std::runtime_error("FRAMEBUFFER CONSTRUCT ERROR | " + result);
-			}
-			Log::Render.Error("FRAMEBUFFER CONSTRUCT FAILED | " + status);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			Log::Render.Error("Native Framebuffer Reconstruction Failure");
 			return false;
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		return true;
-	}
+		if (graphicsSettings.CFAAEnabled) {
+			const TextureStructure cfaaDepthStruct = { .Width = viewWidth, .Height = viewHeight, .Format = TextureFormat::NONE, .MipsEnabled = false };
+			auto cfaaRGBStruct = cfaaDepthStruct; cfaaRGBStruct.Format = TextureFormat::RGB8;
+			auto cfaaRGBA16FStruct = cfaaDepthStruct; cfaaRGBA16FStruct.Format = TextureFormat::RGBA16F;
 
-	bool OpenGLGBuffer::Regenerate(unsigned int viewWidth, unsigned int viewHeight) {
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFBID);
+			if (mCFAADepth.expired()) mCFAADepth = ATexture::MakeTexture(cfaaDepthStruct);
+			else mCFAADepth.lock()->Regenerate(cfaaDepthStruct);
 
-		auto& graphicsSettings = Settings::CurrentSettings->Graphics;
-		auto scale = (graphicsSettings.CFAAEnabled) ? graphicsSettings.CFAAScale : 1;
-		int texW = viewWidth * scale;
-		int texH = viewHeight * scale;
+			if (mCFAADiffuse.expired()) mCFAADiffuse = ATexture::MakeTexture(cfaaRGBStruct);
+			else mCFAADiffuse.lock()->Regenerate(cfaaRGBStruct);
 
-		TextureStructure texStructDepth = {
-			.Width = texW,
-			.Height = texH,
-			.Format = TextureFormat::NONE,
-			.MipsEnabled = true
-		};
-		auto texStructRGB = texStructDepth;
-		texStructRGB.Format = TextureFormat::RGB8;
-		auto texStructRGBDisplay = texStructRGB;
-		texStructRGBDisplay.Width = viewWidth;
-		texStructRGBDisplay.Height = viewHeight;
-		auto texStructRGBA16F = texStructDepth;
-		texStructRGBA16F.Format = TextureFormat::RGBA16F;
+			if (mCFAANormal.expired()) mCFAANormal = ATexture::MakeTexture(cfaaRGBA16FStruct);
+			else mCFAANormal.lock()->Regenerate(cfaaRGBA16FStruct);
 
-		auto tex = mDepth.lock();
-		tex->Regenerate(texStructDepth);
-		tex->Activate(0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, texW, texH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+			if (mCFAAPosition.expired()) mCFAAPosition = ATexture::MakeTexture(cfaaRGBA16FStruct);
+			else mCFAAPosition.lock()->Regenerate(cfaaRGBA16FStruct);
 
-		tex = mDiffuse.lock();
-		tex->Regenerate(texStructRGB);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+			if (mCFAASMR.expired()) mCFAASMR = ATexture::MakeTexture(cfaaRGBStruct);
+			else mCFAASMR.lock()->Regenerate(cfaaRGBStruct);
 
-		tex = mNormal.lock();
-		tex->Regenerate(texStructRGBA16F);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+			const auto depthTex = mCFAADepth.lock();
+			depthTex->Activate(0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		tex = mPosition.lock();
-		tex->Regenerate(texStructRGBA16F);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+			const auto normalTex = mCFAANormal.lock();
+			normalTex->Activate(0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		tex = mSMR.lock();
-		tex->Regenerate(texStructRGB);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, tex->GetBufferID(), 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, mCFAAFBID);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mCFAADiffuse.lock()->GetBufferID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, mCFAANormal.lock()->GetBufferID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, mCFAAPosition.lock()->GetBufferID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, mCFAASMR.lock()->GetBufferID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mCFAADepth.lock()->GetBufferID(), 0);
 
-		tex = mCFAAData.lock();
-		tex->Regenerate(texStructRGBDisplay);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, tex->GetBufferID(), 0);
-
-		tex = mFinal.lock();
-		tex->Regenerate(texStructRGBDisplay);
-		tex->Activate(0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, tex->GetBufferID(), 0);
-
-		// Check status
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			Log::Render.Error("FRAMEBUFFER CONSTRUCT ERROR | " + status);
-			return false;
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+				Log::Render.Error("CFAA Prepass Framebuffer Reconstruction Failure");
+				return false;
+			}
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -160,19 +114,35 @@ namespace Refraction::Engine::Platform {
 	}
 
 	void OpenGLGBuffer::SetShaderTextureIDs() const {
-		Common::Ref<Assets::Shader> shaderWeak;
-		AssetManager::Try([&](Common::Shared<AssetManager> assetManager) {
-			shaderWeak = assetManager->GetAsset<Assets::Shader>("lightingShader");
+		Common::Ref<Assets::Shader> gbufferWeak;
+		Common::Ref<Assets::Shader> lightingWeak;
+		AssetManager::Try([&](const Common::Shared<AssetManager>& assetManager) {
+			gbufferWeak = assetManager->GetAsset<Assets::Shader>("gbufferShader");
+			lightingWeak = assetManager->GetAsset<Assets::Shader>("lightingShader");
 		});
-		if (shaderWeak.expired()) return;
-		auto shader = shaderWeak.lock();
-		shader->Activate();
-		shader->SetUniformInt("gDiffuse", 0);
-		shader->SetUniformInt("gNormal", 1);
-		shader->SetUniformInt("gPosition", 2);
-		shader->SetUniformInt("gSMR", 3);
-		shader->SetUniformInt("gDepth", 4);
-		shader->SetUniformInt("gCFAAData", 5);
+
+		if (!gbufferWeak.expired()) {
+			const auto shader = gbufferWeak.lock();
+			shader->Activate();
+			shader->SetUniformInt("tDiffuse", 0);
+			shader->SetUniformInt("tSpecular", 1);
+			shader->SetUniformInt("tCFAADiffuse", 2);
+			shader->SetUniformInt("tCFAANormal", 3);
+			shader->SetUniformInt("tCFAAPosition", 4);
+			shader->SetUniformInt("tCFAASMR", 5);
+			shader->SetUniformInt("tCFAADepth", 6);
+		}
+
+		if (!lightingWeak.expired()) {
+			const auto shader = lightingWeak.lock();
+			shader->Activate();
+			shader->SetUniformInt("gDiffuse", 0);
+			shader->SetUniformInt("gNormal", 1);
+			shader->SetUniformInt("gPosition", 2);
+			shader->SetUniformInt("gSMR", 3);
+			shader->SetUniformInt("gDepth", 4);
+			shader->SetUniformInt("gCFAAData", 5);
+		}
 	}
 
 	void OpenGLGBuffer::StartFrame() {
@@ -193,14 +163,20 @@ namespace Refraction::Engine::Platform {
 		glBindFramebuffer(GL_FRAMEBUFFER, mFBID);
 	}
 
+	void OpenGLGBuffer::BindCFAAPrepass() {
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCFAAFBID);
+		constexpr GLenum prepassBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+		glDrawBuffers(4, prepassBuffers);
+	}
+
 	void OpenGLGBuffer::BindGeometryPass() {
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFBID);
-
-		GLenum drawBuffs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+		const GLenum drawBuffs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 		glDrawBuffers(5, drawBuffs);
 	}
 
 	void OpenGLGBuffer::BindLightingPass() {
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFBID);
 		glDrawBuffer(GL_COLOR_ATTACHMENT5);
 		BindTextures();
 	}
@@ -211,9 +187,17 @@ namespace Refraction::Engine::Platform {
 		glReadBuffer(GL_COLOR_ATTACHMENT5);
 	}
 
+	void OpenGLGBuffer::BindCFAATexturesForSampling() {
+		if (!mCFAADiffuse.expired()) mCFAADiffuse.lock()->Activate(2);
+		if (!mCFAANormal.expired()) mCFAANormal.lock()->Activate(3);
+		if (!mCFAAPosition.expired()) mCFAAPosition.lock()->Activate(4);
+		if (!mCFAASMR.expired()) mCFAASMR.lock()->Activate(5);
+		if (!mCFAADepth.expired()) mCFAADepth.lock()->Activate(6);
+	}
+
 	void OpenGLGBuffer::BindTextures() {
-		auto textures = GetTextureArray();
-		for (int i = 0; i < (int)textures.size() - 1; i++) {
+		const auto textures = GetTextureArray();
+		for (int i = 0; i < static_cast<int>(textures.size()) - 1; i++) {
 			if (textures[i].expired()) continue;
 			textures[i].lock()->Activate(i);
 		}
@@ -221,9 +205,12 @@ namespace Refraction::Engine::Platform {
 
 	void OpenGLGBuffer::Cleanup() {
 		if (mFBID) glDeleteFramebuffers(1, &mFBID);
-		auto textures = GetTextureArray();
-		for (unsigned int i = 0; i < TextureCount; i++) {
-			if (auto tex = textures[i].lock()) tex->Unload();
+		for (const auto textures = GetTextureArray(); auto& tex : textures) {
+			if (const auto locked = tex.lock()) locked->Unload();
+		}
+
+		for (const auto cfaaTextures = GetCFAATextureArray(); auto& tex : cfaaTextures) {
+			if (const auto locked = tex.lock()) locked->Unload();
 		}
 	}
 }

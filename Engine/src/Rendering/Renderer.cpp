@@ -5,7 +5,7 @@
 #include <Core/Utilities.h>
 #include <Classes/Components/Mesh.h>
 #include "Models/BaseLight.h"
-#include "Models/PointLight.h"
+#include "Settings.h"
 
 #include "Renderer.h"
 
@@ -13,14 +13,14 @@
 namespace Refraction::Engine {
 	Renderer::Renderer() = default;
 
-	std::vector<unsigned int> VAOs = {};
-	std::vector<unsigned int> VBOs = {};
+	static std::vector<unsigned int> VAOs = {};
+	static std::vector<unsigned int> VBOs = {};
 
-	Math::Matrix4 projectionMatrix;
-	std::chrono::steady_clock::time_point timeRenderLast;
-	std::chrono::steady_clock::time_point timeTickLast;
-	Math::Frustum defaultProjection = Math::Frustum(1, 1, 90.0f, 0.1f, 1000.0f);
-	Math::Transform defaultView = Math::Transform();
+	static Math::Matrix4 projectionMatrix;
+	static std::chrono::steady_clock::time_point timeRenderLast;
+	static std::chrono::steady_clock::time_point timeTickLast;
+	static auto defaultProjection = Math::Frustum(1, 1, 90.0f, 0.1f, 1000.0f);
+	static auto defaultView = Math::Transform();
 
 	void Renderer::Init() {
 		mState = RendererState::INIT;
@@ -32,17 +32,17 @@ namespace Refraction::Engine {
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 
-		auto result = glfwGetCurrentContext();
+		glfwGetCurrentContext();
 
 		Log::Render.Info("Creating G-Buffer...");
 		mGBuffer = Platform::AGBuffer::CreateGBuffer();
 		if (!mGBuffer->Init(mViewportRect.w, mViewportRect.h)) throw;
 
-		Log::Render.Info("Creating uniform buffer object...");
+		Log::Render.Info("Creating default uniform buffer object...");
 		projectionMatrix = Math::Matrix4::Perspective(defaultProjection);
-		sUBO initData = {
-			Utilities::NativeToGLMMat4(defaultView.ToMatrix()),
-			Utilities::NativeToGLMMat4(projectionMatrix)
+		const sUBO initData = {
+			.viewMatrix = Utilities::NativeToGLMMat4(defaultView.ToMatrix()),
+			.perspectiveMatrix = Utilities::NativeToGLMMat4(projectionMatrix)
 		};
 		mUBO = new UniformBufferObject(initData);
 
@@ -54,15 +54,13 @@ namespace Refraction::Engine {
 
 		Log::Render.Info("Initialisation complete");
 		mState = RendererState::RUNNING;
-
-		return;
 	}
 
-	unsigned int quadVAO = 0;
-	unsigned int quadVBO;
+	static unsigned int quadVAO = 0;
+	static unsigned int quadVBO;
 	static void renderQuad() {
 		if (quadVAO == 0) {
-			float quadVertices[] = {
+			constexpr float quadVertices[] = {
 				// positions        // texture Coords
 				-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
 				-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -76,17 +74,17 @@ namespace Refraction::Engine {
 			glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), static_cast<void *>(nullptr));
 			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
 		}
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
 
-	void Renderer::RenderFrame(Common::Shared<Project> projectInstance) {
-		auto timeNow = std::chrono::steady_clock::now();
+	void Renderer::RenderFrame(const Common::Shared<Project>& projectInstance) {
+		const auto timeNow = std::chrono::steady_clock::now();
 		mDeltaRenderTime = std::chrono::duration<double>(timeNow - timeRenderLast).count();
 		Time::RenderDelta = mDeltaRenderTime;
 		mElapsedRenderTime = std::chrono::duration<double>(timeNow - mStartRenderTime).count();
@@ -104,14 +102,14 @@ namespace Refraction::Engine {
 			mFinalOutput = mGBuffer->GetLastRenderedFrame();
 		}
 
-		AssetManager::Try([&](Common::Shared<AssetManager> assetManager) {
-			auto& graphicsSettings = Settings::CurrentSettings->Graphics;
+		AssetManager::Try([&](const Common::Shared<AssetManager>& assetManager) {
+			const auto& graphicsSettings = Settings::CurrentSettings->Graphics;
 			if (mGeomPassShader.expired()) {
 				mGeomPassShader = assetManager->GetAsset<Assets::Shader>("gbufferShader");
 			}
 			if (mLightingPassShader.expired()) {
 				mLightingPassShader = assetManager->GetAsset<Assets::Shader>("lightingShader");
-				auto shader = mLightingPassShader.lock();
+				const auto shader = mLightingPassShader.lock();
 				shader->Activate();
 				shader->SetUniformVec3("ambient", Math::Vector3(0.2f));
 				mGBuffer->SetShaderTextureIDs();
@@ -123,10 +121,10 @@ namespace Refraction::Engine {
 				mSkyShader = assetManager->GetAsset<Assets::Shader>("DefaultSky");
 			}
 
-			if (!mLoadedScene) {
-				Log::Render.Info("Loading test scene...");
-				mLoadedScene = new BaseScene();
-			}
+			//if (!mLoadedScene) {
+				//Log::Render.Info("Loading test scene...");
+				//mLoadedScene = new BaseScene();
+			//}
 		});
 
 		UpdateUniformBuffers(projectInstance);
@@ -139,8 +137,9 @@ namespace Refraction::Engine {
 		DSPassFinal();
 	}
 
-	void Renderer::UpdateUniformBuffers(Common::Shared<Project> projectInstance) {
-		auto& camera = Objects::Camera::ActiveCamera;
+	static int cfaaLastScale = 1;
+	void Renderer::UpdateUniformBuffers(const Common::Shared<Project>& projectInstance) {
+		const auto& camera = Objects::Camera::ActiveCamera;
 		if (!camera) return;
 		sUBO newData{};
 		newData.viewMatrix = Utilities::NativeToGLMMat4(camera->GetViewMatrix());
@@ -153,9 +152,13 @@ namespace Refraction::Engine {
 			projectionMatrix = Math::Matrix4::Perspective(camera->mFrustum);
 			mViewportRectLast = mViewportRect;
 		}
-		auto& cfaaEnabled = Settings::CurrentSettings->Graphics.CFAAEnabled;
-		if (mCFAALastState != cfaaEnabled) {
+		if (const auto& cfaaEnabled = Settings::CurrentSettings->Graphics.CFAAEnabled; mCFAALastState != cfaaEnabled) {
 			mCFAALastState = cfaaEnabled;
+			// Regenerate GBuffer to rescale GBuffer frames
+			if (!mGBuffer->Regenerate(mViewportRect.w, mViewportRect.h)) throw;
+		}
+		if (const auto& cfaaScale = Settings::CurrentSettings->Graphics.CFAAScale; cfaaLastScale != cfaaScale) {
+			cfaaLastScale = cfaaScale;
 			// Regenerate GBuffer to rescale GBuffer frames
 			if (!mGBuffer->Regenerate(mViewportRect.w, mViewportRect.h)) throw;
 		}
@@ -174,29 +177,41 @@ namespace Refraction::Engine {
 
 	// Deferred Shading
 
-	void Renderer::DSPassGeometry(Common::Shared<Project> projectInstance) {
-		auto& graphicsSettings = Settings::CurrentSettings->Graphics;
+	void Renderer::DSPassGeometry(const Common::Shared<Project>& projectInstance) const {
+		const auto& graphicsSettings = Settings::CurrentSettings->Graphics;
+		const auto scene = projectInstance->GetActiveScene().lock();
+
+		if (graphicsSettings.CFAAEnabled) {
+			mGBuffer->BindCFAAPrepass();
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glViewport(0, 0, mViewportRect.w, mViewportRect.h);
+
+			const auto shader = mCFAAPrepassShader.lock();
+			shader->Activate();
+			scene->RenderScene(projectInstance->GetGlobalObjects());
+		}
+
 		mGBuffer->BindGeometryPass();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		const int upscaledW = mViewportRect.w * (graphicsSettings.CFAAEnabled ? graphicsSettings.CFAAScale : 1);
+		const int upscaledH = mViewportRect.h * (graphicsSettings.CFAAEnabled ? graphicsSettings.CFAAScale : 1);
+		glViewport(0, 0, upscaledW, upscaledH);
 
 		if (graphicsSettings.WireframeEnabled) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
-		auto scene = projectInstance->GetActiveScene().lock();
-
-		if (graphicsSettings.CFAAEnabled) {
-			// CFAA prepass
-			auto shader = mCFAAPrepassShader.lock();
-			shader->Activate();
-			scene->RenderScene(projectInstance->GetGlobalObjects());
-		}
-
-		// Draw models
-		auto shader = mGeomPassShader.lock();
+		const auto shader = mGeomPassShader.lock();
 		shader->Activate();
 		shader->SetUniformBool("usingCFAA", graphicsSettings.CFAAEnabled);
-		shader->SetUniformInt("CFAAScale", graphicsSettings.CFAAScale);
+		shader->SetUniformInt("CFAAScale", graphicsSettings.CFAAEnabled ? graphicsSettings.CFAAScale : 1);
+		shader->SetUniformFloat("viewNear", Objects::Camera::ActiveCamera->mFrustum.zNear);
+		shader->SetUniformFloat("viewFar", Objects::Camera::ActiveCamera->mFrustum.zFar);
+
+		if (graphicsSettings.CFAAEnabled) {
+			mGBuffer->BindCFAATexturesForSampling();
+		}
+
 		scene->RenderScene(projectInstance->GetGlobalObjects());
 
 		if (graphicsSettings.WireframeEnabled) {
@@ -204,25 +219,27 @@ namespace Refraction::Engine {
 		}
 	}
 
-	void Renderer::DSPassLighting(Common::Shared<Project> projectInstance) {
-		auto& graphicsSettings = Settings::CurrentSettings->Graphics;
+	void Renderer::DSPassLighting(const Common::Shared<Project>& projectInstance) const {
+		const auto& graphicsSettings = Settings::CurrentSettings->Graphics;
 		mGBuffer->BindLightingPass();
 
-		auto lightShader = mLightingPassShader.lock();
+		const auto lightShader = mLightingPassShader.lock();
 
 		lightShader->Activate();
-		for (auto i = 0; i < mLoadedScene->mLights.size(); i++) {
-			const auto light = mLoadedScene->mLights[i];
-			light->UpdateShaderUniforms(i);
-		}
+		//for (auto i = 0; i < mLoadedScene->mLights.size(); i++) {
+		//	const auto light = mLoadedScene->mLights[i];
+		//	light->UpdateShaderUniforms(i);
+		//}
 		lightShader->SetUniformVec3("viewPos", Objects::Camera::ActiveCamera->mTransform.GetWorldPosition());
 		lightShader->SetUniformInt("dataView", graphicsSettings.ViewportDataView);
 		lightShader->SetUniformBool("usingCFAA", graphicsSettings.CFAAEnabled);
 		lightShader->SetUniformInt("CFAAScale", graphicsSettings.CFAAScale);
+		lightShader->SetUniformFloat("viewNear", Objects::Camera::ActiveCamera->mFrustum.zNear);
+		lightShader->SetUniformFloat("viewFar", Objects::Camera::ActiveCamera->mFrustum.zFar);
 
 		glDepthMask(GL_FALSE);
 		// Render sky
-		auto skyShader = mSkyShader.lock();
+		const auto skyShader = mSkyShader.lock();
 		skyShader->Activate();
 		renderQuad();
 		// Render grid
@@ -232,6 +249,7 @@ namespace Refraction::Engine {
 
 		// Render lit objects
 		lightShader->Activate();
+		mGBuffer->BindTextures();
 		renderQuad();
 	}
 

@@ -50,7 +50,7 @@ namespace Refraction::Editor::GUI {
 	}
 
 	static void DrawComponentProperties(Common::Shared<Components::AComponent> component) {
-		std::string compFullTypeName = typeid(*component).name();
+		std::string compFullTypeName = typeid(component).name();
 		auto compTypeName = compFullTypeName.substr(compFullTypeName.find_last_of(':') + 1);
 		ImGui::Text("Component Type: " + compTypeName);
 		ImGui::Text("UUID: " + component->GetUUID().AsString());

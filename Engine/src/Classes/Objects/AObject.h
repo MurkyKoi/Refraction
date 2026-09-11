@@ -79,13 +79,13 @@ namespace Refraction::Objects {
 		void RemoveChild(const UUID& target);
 
 		// Creates a copy of this object and its descendants
-		Common::Shared<AObject> Clone() const;
+		[[nodiscard]] Common::Shared<AObject> Clone() const;
 		
 		// Returns the UUID of the object
 		[[nodiscard]] UUID GetUUID() const { return mUUID; }
 
 		// Returns the world transform of this object (multiplied with ancestors)
-		Math::Matrix4 GetWorldMatrix() const;
+		[[nodiscard]] Math::Matrix4 GetWorldMatrix() const;
 
 		// Returns a serialised copy of the object and its Components and children
 		virtual nlohmann::json Serialise();

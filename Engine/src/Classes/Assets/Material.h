@@ -16,7 +16,7 @@ namespace Refraction::Assets {
 
 		Material();
 
-		void Activate();
+		void Activate() const;
 
 		std::string GetSerialisedType() override { return "MaterialAsset"; }
 	};

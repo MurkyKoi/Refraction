@@ -4,14 +4,14 @@
 
 namespace Refraction::Engine {
 	void AssetManager::RegisterAllAssets() {
-		Log::SInfo("Registering all assets in project...");
+		Log::Project.Info("Registering all assets in project...");
 		RecursiveRegisterAssets(mProjectPath / "Assets");
 	}
 
 	Common::Ref<Assets::Asset> AssetManager::RegisterAsset(const std::filesystem::path& metadataPath) {
 		const auto pathStr = metadataPath.string();
 		if (!(std::filesystem::exists(metadataPath) && std::filesystem::is_regular_file(metadataPath) && metadataPath.has_extension() && metadataPath.extension() == RFCT_ASSET_METADATA_EXTENSION)) {
-			Log::SError("Invalid metadata file at path " + pathStr);
+			Log::Project.Error("Invalid metadata file at path " + pathStr);
 			return {};
 		}
 
@@ -21,23 +21,28 @@ namespace Refraction::Engine {
 			mAssetMap[uuid] = asset;
 			return asset;
 		} else {
-			Log::SWarn("Asset with UUID " + uuid.AsString() + " already exists, returning existing asset");
+			Log::Project.Warn("Asset with UUID " + uuid.AsString() + " already exists, returning existing asset");
 			return mAssetMap.at(uuid);
 		}
 	}
 
 	void AssetManager::UnloadAll() {
+		int volatileCount = 0;
+		for (const auto &asset: mAssetMap | std::views::values) {
+			if (asset->IsVolatile()) volatileCount++;
+		}
+		Log::Project.Info("Unloading {} assets ({} volatile)", mAssetMap.size(), volatileCount);
+		Log::Project.Info("Unloading {} metadata files", mMetadataMap.size());
+
 		for (auto it = mAssetMap.begin(); it != mAssetMap.end(); ) {
 			auto& [uuid, asset] = *it;
-			Log::SInfo("Unloading asset with UUID " + UUID::AsString(uuid));
 			asset.reset();
 			it = mAssetMap.erase(it);
 		}
 
 		for (auto it = mMetadataMap.begin(); it != mMetadataMap.end(); ) {
-			auto& [uuid, asset] = *it;
-			Log::SInfo("Unloading metadata with UUID " + UUID::AsString(uuid));
-			asset.reset();
+			auto& [uuid, meta] = *it;
+			meta.reset();
 			it = mMetadataMap.erase(it);
 		}
 	}
@@ -83,7 +88,7 @@ namespace Refraction::Engine {
 
 	Common::Shared<Assets::AssetMetadata> AssetManager::LoadMetadata(const std::filesystem::path& metadataPath) {
 		if (!std::filesystem::exists(metadataPath)) {
-			Log::SError("Could not find metadata file at path " + metadataPath.string());
+			Log::Project.Error("Could not find metadata file at path " + metadataPath.string());
 			return nullptr;
 		}
 		const auto dataStr = FileHandling::ReadFile(metadataPath);

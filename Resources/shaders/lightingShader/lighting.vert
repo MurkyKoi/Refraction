@@ -16,10 +16,6 @@ out VERT_OUT {
 } VertOut;
 
 void main() {
-	if (usingCFAA && dataView != 5) { // Sample GBuffer textures at native resolution
-		VertOut.TexCoords = aTexCoords / 2;
-	} else {
-		VertOut.TexCoords = aTexCoords;
-	}
+	VertOut.TexCoords = aTexCoords;
 	gl_Position = vec4(aPos, 1.0);
 }

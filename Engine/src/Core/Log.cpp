@@ -13,6 +13,13 @@ import cpptrace;
 #define DEFAULT_LOG_FRAME 2
 #endif
 
+#ifdef __MINGW64__
+#define LAMBDA_CLASSNAME "function"
+#endif
+#ifdef _MSC_VER
+#define LAMBDA_CLASSNAME "<lambda"
+#endif
+
 namespace {
 	using Refraction::Log;
 	std::string ANSI24RGB(Log::Colour colour) {
@@ -25,14 +32,8 @@ namespace {
 	Log::Colour timestampColour = { .R = 64, .G = 210, .B = 255 };
 	Log::Colour classColour = { .R = 110, .G = 255, .B = 124 };
 	Log::Colour functionColour = { .R = 96, .G = 200, .B = 96 };
-	std::string separatorStr = ANSI24RGB(separatorColour) + " - ";
-	std::string threadColourStr = ANSI24RGB(threadColour);
-	std::string timestampColourStr = ANSI24RGB(timestampColour);
-	std::string classColourStr = ANSI24RGB(classColour);
-	std::string functionColourStr = ANSI24RGB(functionColour);
 
 	std::string LastClassPrinted;
-	std::string LastMessagePrinted;
 }
 
 namespace Refraction {
@@ -62,27 +63,27 @@ namespace Refraction {
 		return oss.str();
 	};
 
-	void Log::SInfo(std::string message) {
+	void Log::SInfo(const std::string& message) {
 		GenerateLog("Refraction", message, "INFO", white, false, Colour{ .R = 200, .G = 255, .B = 255 });
 	}
-	void Log::SWarn(std::string message) {
+	void Log::SWarn(const std::string& message) {
 		GenerateLog("Refraction", message, "WARN", Colour{ .R = 255, .G = 160, .B = 70 });
 	}
-	void Log::SError(std::string message) {
+	void Log::SError(const std::string& message) {
 		GenerateLog("Refraction", message, "ERR", Colour{ .R = 255, .G = 60, .B = 60 }, true);
 	}
 
 	void Log::InitConsoleLog() {
-		Log::AddLogCallback(OnConsoleLog);
+		AddLogCallback(OnConsoleLog);
 	}
 
-	void Log::Info(std::string message) {
+	void Log::InternalInfo(const std::string& message) const {
 		GenerateLog(mName, message, "INFO", white, false, Colour{ .R = 200, .G = 255, .B = 255 });
 	}
-	void Log::Warn(std::string message) {
+	void Log::InternalWarn(const std::string& message) const {
 		GenerateLog(mName, message, "WARN", Colour{ .R = 255, .G = 160, .B = 70 });
 	}
-	void Log::Error(std::string message) {
+	void Log::InternalError(const std::string& message) const {
 		GenerateLog(mName, message, "ERR", Colour{ .R = 255, .G = 60, .B = 60 }, true);
 	}
 
@@ -130,7 +131,9 @@ namespace Refraction {
 					className = classSymbolStr.substr(symbolPos + 1, -1);
 				} else className = classSymbolStr.substr(0, -1);
 
-				if (!className.starts_with("<lambda")) {
+				// Only stop traversing when the class name is NOT anonymous and isn't the Log class
+				// TODO: make a dynamic blacklist so this isn't hardcoded
+				if (!className.starts_with(LAMBDA_CLASSNAME) && !className.starts_with("Log") && !className.starts_with("Singleton") && !className.starts_with("ClassSerialiser")) {
 					testLambda = false;
 					break;
 				}
@@ -206,6 +209,7 @@ namespace Refraction {
 	Log Log::Render = Log("Renderer");
 	Log Log::Physics = Log("Physics");
 	Log Log::Runtime = Log("Runtime");
+	Log Log::Project = Log("Project");
 	Log Log::Editor = Log("Editor");
 
 	Common::RuntimeError::RuntimeError(const std::string& msg) : std::runtime_error(msg) {

@@ -20,11 +20,11 @@ namespace Refraction::Engine::Platform {
 
 	Common::Ref<Assets::Image> AGBuffer::GetLastRenderedFrame() {
 		Common::Ref<Assets::Image> imgWeak;
-		AssetManager::Try([&](Common::Shared<AssetManager> manager) {
+		AssetManager::Try([&](const Common::Shared<AssetManager>& manager) {
 			if (!mFinalImageUUID) {
 				// Generate a new image
 				imgWeak = manager->MakeVolatile<Assets::Image>();
-				if (auto img = imgWeak.lock()) {
+				if (const auto img = imgWeak.lock()) {
 					mFinalImageUUID = img->GetUUID();
 				}
 			} else {
@@ -33,7 +33,7 @@ namespace Refraction::Engine::Platform {
 				if (imgWeak.expired()) {
 					// Try regenerating the image
 					imgWeak = manager->MakeVolatile<Assets::Image>();
-					if (auto img = imgWeak.lock()) {
+					if (const auto img = imgWeak.lock()) {
 						mFinalImageUUID = img->GetUUID();
 					}
 				}
@@ -46,7 +46,7 @@ namespace Refraction::Engine::Platform {
 		return {};
 	}
 
-	AGBuffer::AGBuffer() {}
+	AGBuffer::AGBuffer() = default;
 
-	AGBuffer::~AGBuffer() {}
+	AGBuffer::~AGBuffer() = default;
 }

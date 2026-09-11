@@ -113,7 +113,7 @@ namespace Refraction::Editor {
 	}
 
 	void EditorTheme::FetchCurrentColours() {
-		ImGuiStyle& style = ImGui::GetStyle();
+		const ImGuiStyle& style = ImGui::GetStyle();
 		Palette.at(ColourIndex_Primary1) = style.Colors[ImGuiCol_FrameBgHovered];
 		Palette.at(ColourIndex_Primary2) = style.Colors[ImGuiCol_FrameBgActive];
 		Palette.at(ColourIndex_Primary3) = style.Colors[ImGuiCol_FrameBg];
@@ -153,17 +153,16 @@ namespace Refraction::Editor {
 					LoadDefault();
 				}
 				if (ImGui::Button("Load From File")) {
-					auto path = Dialogs::SelectFile(REFRACTION_THEME_EXTENSION, "Choose theme file");
-					if (std::filesystem::exists(path)) LoadFromFile(path);
+					if (const auto path = Dialogs::SelectFile(REFRACTION_THEME_EXTENSION, "Choose theme file"); std::filesystem::exists(path)) LoadFromFile(path);
 				}
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Colours")) {
 				for (unsigned int i = 0; i < ColourIndex_COUNT; i++) {
 					auto& col = Palette[i];
-					int i4Col[4] = { (int)ceilf(col.x * 255), (int)ceilf(col.y * 255), (int)ceilf(col.z * 255), (int)ceilf(col.w * 255) };
+					int i4Col[4] = { static_cast<int>(ceilf(col.x * 255)), static_cast<int>(ceilf(col.y * 255)), static_cast<int>(ceilf(col.z * 255)), static_cast<int>(ceilf(col.w * 255)) };
 					ImGui::SliderInt4(ColourIndexStr[i], i4Col, 0, 255, "%d", ImGuiSliderFlags_ColorMarkers);
-					col = FromRGBA((uint8_t)i4Col[0], (uint8_t)i4Col[1], (uint8_t)i4Col[2], (uint8_t)i4Col[3]);
+					col = FromRGBA(static_cast<uint8_t>(i4Col[0]), static_cast<uint8_t>(i4Col[1]), static_cast<uint8_t>(i4Col[2]), static_cast<uint8_t>(i4Col[3]));
 				}
 				ImGui::EndTabItem();
 			}
@@ -188,13 +187,13 @@ namespace Refraction::Editor {
 	}
 
 	bool EditorTheme::LoadFromFile(const std::filesystem::path& path) {
-		Log::SInfo("Loading theme from file " + path.string());
+		Log::Editor.Info("Loading theme from file " + path.string());
 
-		auto contents = FileHandling::ReadFile(path);
+		const auto contents = FileHandling::ReadFile(path);
 		Utilities::ClassSerialiser::TryParseJSON(contents, [&](nlohmann::json json) {
 			for (unsigned int i = 0; i < ColourIndex_COUNT; i++) {
 				if (json.contains(std::to_string(i))) {
-					auto col = Utilities::ClassSerialiser::DeserialiseVector4(json.at(std::to_string(i)));
+					const auto col = Utilities::ClassSerialiser::DeserialiseVector4(json.at(std::to_string(i)));
 					Palette[i] = ImVec4(col.x, col.y, col.z, col.w);
 				}
 			}
@@ -205,7 +204,7 @@ namespace Refraction::Editor {
 				}
 			}
 			if (!DisplayFont) {
-				Log::SWarn("No valid display font specified, using default");
+				Log::Editor.Warn("No valid display font specified, using default");
 				DisplayFontSource = FileHandling::GetResourcesPath() / "fonts" / "OpenSans-Regular.ttf";
 				DisplayFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(DisplayFontSource.string().c_str());
 			}
@@ -215,23 +214,23 @@ namespace Refraction::Editor {
 		});
 
 		CurrentThemePath = path;
-		Log::SInfo("Successfully loaded theme");
+		Log::Editor.Info("Successfully loaded theme");
 		return true;
 	}
 
 	bool EditorTheme::SaveToFile(std::filesystem::path path) {
 		if (path.empty()) {
 			if (CurrentThemePath.empty()) {
-				Log::SError("Attempt to save theme without loading from a file first");
+				Log::Editor.Error("Attempt to save theme without loading from a file first");
 				return false;
 			}
 			path = CurrentThemePath;
 		}
-		Log::SInfo("Saving current theme to file " + path.string());
+		Log::Editor.Info("Saving current theme to file " + path.string());
 
-		auto serialised = Utilities::ClassSerialiser::AppendJSON({}, [&](nlohmann::json& json) {
+		const auto serialised = Utilities::ClassSerialiser::AppendJSON({}, [&](nlohmann::json& json) {
 			for (unsigned int i = 0; i < ColourIndex_COUNT; i++) {
-				auto& col = Palette[i];
+				const auto& col = Palette[i];
 				json[std::to_string(i)] = Utilities::ClassSerialiser::Serialise(Math::Vector4(col.x, col.y, col.z, col.w));
 			}
 			json["DisplayFontSource"] = DisplayFontSource;
@@ -240,12 +239,12 @@ namespace Refraction::Editor {
 
 		std::ofstream dataFile(path);
 		if (!dataFile.is_open()) {
-			Log::SError("Could not open path for writing");
+			Log::Editor.Error("Could not open path for writing");
 			return false;
 		}
 		dataFile << serialised.dump(RFCT_JSON_INDENT);
 
-		Log::SInfo("Successfully saved theme");
+		Log::Editor.Info("Successfully saved theme");
 		return true;
 	}
 

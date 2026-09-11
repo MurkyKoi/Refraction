@@ -9,7 +9,7 @@
 #include <Interface/Project.h>
 
 namespace Refraction::Events {
-	class FrameRenderedEvent : public Events::Event {
+	class FrameRenderedEvent : public Event {
 	public:
 		Common::Ref<Assets::Image> mFrame;
 
@@ -17,7 +17,7 @@ namespace Refraction::Events {
 			mName = "FrameRendered";
 		}
 	};
-	class ViewportResizedEvent : public Events::Event {
+	class ViewportResizedEvent : public Event {
 	public:
 		Math::Rect mViewportRect;
 

@@ -9,14 +9,14 @@
 #include "Model.h"
 
 namespace Refraction::Assets {
-	static void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene);
-	static Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, const std::vector<Common::Ref<Assets::Material>>& materials, const aiMesh* mesh, const aiScene* scene);
-	static std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(const std::string& sourcePath, const aiMaterial* mat, aiTextureType type, const std::string& typeName);
+	static void ProcessNode(const std::string& sourcePath, std::vector<Common::Ref<Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene);
+	static Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(const std::vector<Common::Ref<Material>> &materials, const aiMesh *mesh);
+	static std::vector<Common::Ref<Image>> LoadMaterialTextures(const std::string &sourcePath, const aiMaterial *mat, aiTextureType type);
 
-	void ProcessNode(std::string sourcePath, std::vector<Common::Ref<Assets::Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene) {
+	void ProcessNode(const std::string& sourcePath, std::vector<Common::Ref<Material>>& materials, std::vector<Common::Shared<Engine::Platform::AMeshFragment>>& fragments, const aiNode* node, const aiScene* scene) {
 		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 			const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			fragments.push_back(ProcessMesh(sourcePath, materials, mesh, scene));
+			fragments.push_back(ProcessMesh(materials, mesh));
 		}
 
 		for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -24,11 +24,11 @@ namespace Refraction::Assets {
 		}
 	}
 
-	Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(std::string& sourcePath, const std::vector<Common::Ref<Assets::Material>>& materials, const aiMesh* mesh, const aiScene* scene) {
+	Common::Shared<Engine::Platform::AMeshFragment> ProcessMesh(const std::vector<Common::Ref<Material>> &materials, const aiMesh *mesh) {
 		std::vector<Engine::sVertex> vertices;
 		std::vector<unsigned int> indices;
-		std::vector<Common::Shared<Assets::Image>> diffuseMaps;
-		std::vector<Common::Shared<Assets::Image>> specularMaps;
+		std::vector<Common::Shared<Image>> diffuseMaps;
+		std::vector<Common::Shared<Image>> specularMaps;
 
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 			Engine::sVertex vertex;
@@ -58,8 +58,8 @@ namespace Refraction::Assets {
 		return Engine::Platform::AMeshFragment::MakeMeshFragment(vertices, indices, materials[mesh->mMaterialIndex]);
 	}
 
-	std::vector<Common::Ref<Assets::Image>> LoadMaterialTextures(const std::string& sourcePath, const aiMaterial* mat, const aiTextureType type, const std::string& typeName) {
-		std::vector<Common::Ref<Assets::Image>> textures;
+	std::vector<Common::Ref<Image>> LoadMaterialTextures(const std::string &sourcePath, const aiMaterial *mat, const aiTextureType type) {
+		std::vector<Common::Ref<Image>> textures;
 		Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& assetManager) {
 			for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
 				aiString str;
@@ -67,7 +67,7 @@ namespace Refraction::Assets {
 
 				std::string fullPath = sourcePath + "/" + str.C_Str();
 
-				auto texture = assetManager->GetAsset<Assets::Image>(fullPath);
+				auto texture = assetManager->GetAsset<Image>(fullPath);
 				textures.push_back(texture);
 			}
 		});
@@ -104,10 +104,10 @@ namespace Refraction::Assets {
 			return;
 		}
 
-		auto importSourcePath = meta->AssetPath.string().substr(0, meta->AssetPath.string().find_last_of('/'));
+		const auto importSourcePath = meta->AssetPath.string().substr(0, meta->AssetPath.string().find_last_of('/'));
 
 		// Create materials
-		Log::SInfo("Parsing materials...");
+		Log::Project.Info("Parsing materials at {}", importSourcePath);
 		if (scene->mNumMaterials > 0) {
 			for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
 				const auto importMat = scene->mMaterials[i];
@@ -119,11 +119,11 @@ namespace Refraction::Assets {
 				if (matWeak.expired()) continue;
 				const auto mat = matWeak.lock();
 
-				if (auto diffuseMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_DIFFUSE, RFCT_TEXTURE_TYPE_DIFFUSE); !diffuseMaps.empty()) mat->mDiffuse = diffuseMaps[0];
+				if (auto diffuseMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_DIFFUSE); !diffuseMaps.empty()) mat->mDiffuse = diffuseMaps[0];
 				else {
 					Log::SWarn("Imported material does not associate with any diffuse textures, using default texture.");
 				}
-				if (auto specularMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_SPECULAR, RFCT_TEXTURE_TYPE_SPECULAR); !specularMaps.empty()) mat->mSpecular = specularMaps[0];
+				if (auto specularMaps = LoadMaterialTextures(importSourcePath, importMat, aiTextureType_SPECULAR); !specularMaps.empty()) mat->mSpecular = specularMaps[0];
 				else {
 					Log::SWarn("Imported material does not associate with any specular textures, using default texture.");
 				}
@@ -140,6 +140,11 @@ namespace Refraction::Assets {
 		// Load meshes
 		Log::SInfo("Parsing mesh data...");
 		ProcessNode(importSourcePath, mMaterials, mFragments, scene->mRootNode, scene);
+	}
+
+	// TODO: Save material files with mesh
+	void Model::OnSave() {
+		Asset::OnSave();
 	}
 }
 

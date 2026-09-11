@@ -17,6 +17,8 @@ in VERT_OUT {
 
 uniform bool usingCFAA;
 uniform int CFAAScale;
+uniform float viewNear = 0.01;
+uniform float viewFar = 1000.0;
 
 // Model textures
 uniform sampler2D tDiffuse;
@@ -29,43 +31,66 @@ uniform sampler2D tCFAAPosition;
 uniform sampler2D tCFAASMR;
 uniform sampler2D tCFAADepth;
 
+float LineariseDepth(float rawDepth) {
+	float z = rawDepth * 2.0 - 1.0;
+	return (2.0 * viewNear * viewFar) / (viewFar + viewNear - z * (viewFar - viewNear));
+}
+
 void main() {
 	if(usingCFAA) { // Use CFAA prepass data, expect to sample to upscaled image
-		// Get depth contrast
-		vec2 texelSize = 1.0 / textureSize(tCFAADepth, 0);
-		vec2 originalTexCoords = VertOut.ScreenTexCoords / CFAAScale;
-		float depthContrast;
-		float pixelDepth = texture(tCFAADepth, originalTexCoords).r;
+		vec2 nativeSize = vec2(textureSize(tCFAADepth, 0));
+		vec2 upscaledSize = nativeSize * float(CFAAScale);
+		vec2 correctFragCoord = vec2(gl_FragCoord.x, upscaledSize.y - gl_FragCoord.y);
 
-		int kernelSize = CFAAScale-1;
+		vec2 sampleCoords = correctFragCoord / upscaledSize;
+		vec2 nativeTexelSize = 1.0 / nativeSize;
+
+		// Get depth contrast
+		float maxDepthDelta = 0.0;
+		float centerRawDepth = texture(tCFAADepth, sampleCoords).r;
+		float centerLinearDepth = LineariseDepth(centerRawDepth);
+
+		int kernelSize = 1; // Evaluates immediate neighbor cells
 		for(int x = -kernelSize; x <= kernelSize; x++) {
-			if(x == 0) continue;
 			for(int y = -kernelSize; y <= kernelSize; y++) {
-				if(y == 0) continue;
-				depthContrast += (texture(tCFAADepth, VertOut.ScreenTexCoords + vec2(texelSize.x * x, texelSize.y * y)).r - pixelDepth);
+				if(x == 0 && y == 0) continue;
+
+				float neighborRawDepth = texture(tCFAADepth, sampleCoords + vec2(nativeTexelSize.x * x, nativeTexelSize.y * y)).r;
+				float neighborLinearDepth = LineariseDepth(neighborRawDepth);
+
+				float delta = abs(neighborLinearDepth - centerLinearDepth);
+				if (delta > maxDepthDelta) {
+					maxDepthDelta = delta;
+				}
 			}
 		}
-		//contrast -= (1 - texture(tCFAADepth, originalTexCoords).rgb); // Offset by actual sample depth to get average difference
-		gCFAAData.x = depthContrast;
 
-		if (gCFAAData.x < 0.5) {
-			// Skip extra sampling and just output the pre-sampled values
-			gDiffuse = texture(tCFAADiffuse, originalTexCoords).rgb;
-			gNormal = texture(tCFAANormal, originalTexCoords).rgb;
-			gPosition = texture(tCFAAPosition, originalTexCoords).rgb;
-			gSMR = texture(tCFAASMR, originalTexCoords).rgb;
-			gDepth = texture(tCFAADepth, originalTexCoords).r;
-		} else {
-			// Further sample the object
-			gDiffuse.rgb = texture(tDiffuse, VertOut.TexCoords).rgb;
+		bool isHighContrast = (maxDepthDelta > 0.05);
+
+		if (isHighContrast) {
+			float visibleContrast = clamp(maxDepthDelta * 5.0, 0.0, 1.0);
+			gCFAAData = vec3(visibleContrast, 0.0, 0.0);
+
+			gDiffuse = texture(tDiffuse, VertOut.TexCoords).rgb;
 			gNormal = normalize(VertOut.Normal);
 			gPosition = VertOut.FragPos;
-			gSMR.r = texture(tSpecular, VertOut.TexCoords).r;
+			gSMR = vec3(texture(tSpecular, VertOut.TexCoords).r, 0.0, 0.0);
+			gDepth = gl_FragCoord.z;
+		} else {
+			gCFAAData = vec3(0.0, 0.0, 0.0);
+
+			gDiffuse = texture(tCFAADiffuse, sampleCoords).rgb;
+			gNormal = texture(tCFAANormal, sampleCoords).rgb;
+			gPosition = texture(tCFAAPosition, sampleCoords).rgb;
+			gSMR = texture(tCFAASMR, sampleCoords).rgb;
+			gDepth = texture(tCFAADepth, sampleCoords).r;
 		}
 	} else {
-		gDiffuse.rgb = texture(tDiffuse, VertOut.TexCoords).rgb;
+		gDiffuse = texture(tDiffuse, VertOut.TexCoords).rgb;
 		gNormal = normalize(VertOut.Normal);
 		gPosition = VertOut.FragPos;
-		gSMR.r = texture(tSpecular, VertOut.TexCoords).r;
+		gSMR = vec3(texture(tSpecular, VertOut.TexCoords).r, 0.0, 0.0);
+		gDepth = gl_FragCoord.z;
+		gCFAAData = vec3(0.0);
 	}
 }

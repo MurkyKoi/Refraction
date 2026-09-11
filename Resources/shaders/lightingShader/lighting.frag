@@ -16,6 +16,9 @@ in VERT_OUT {
 
 uniform bool usingCFAA;
 uniform int CFAAScale;
+uniform float viewNear = 0.01;
+uniform float viewFar = 1000.0;
+
 uniform sampler2D gDiffuse;
 uniform sampler2D gNormal;
 uniform sampler2D gPosition;
@@ -30,36 +33,32 @@ uniform int dataView;
 
 out vec4 FragColor;
 
-float viewNear = 0.01;
-float viewFar = 1000;
-
 void main() {
 	switch(dataView) {
 	case 0: default: { // Final
-		vec3 Diffuse;
-		vec3 Normal;
-		vec3 FragPos;
-		float Specular;
+		vec3 Diffuse = vec3(0.0);
+		vec3 Normal = vec3(0.0);
+		vec3 FragPos = vec3(0.0);
+		float Specular = 0.0;
 		if(usingCFAA) { // Blend CFAA-upscaled texture samples
 			vec2 texelSize = 1.0 / textureSize(gDepth, 0);
-			int kernelSize = CFAAScale-1;
-			
-			Normal = texture(gNormal, VertOut.TexCoords).rgb;
-			for(int x = -kernelSize; x <= kernelSize; x++) {
-				if(x == 0) continue;
-				for(int y = -kernelSize; y <= kernelSize; y++) {
-					if(y == 0) continue;
-					vec2 samplePos = VertOut.TexCoords + vec2(texelSize.x * x, texelSize.y * y);
-					Diffuse *= texture(gDiffuse, samplePos).rgb;
-					Diffuse /= 2;
-					//Normal *= texture(gNormal, samplePos).rgb;
-					//Normal /= 2;
-					FragPos *= texture(gPosition, samplePos).rgb;
-					FragPos /= 2;
-					Specular *= texture(gSMR, samplePos).r;
-					Specular /= 2;
+			float totalSamples = 0.0;
+
+			for(int x = 0; x < CFAAScale; x++) {
+				for(int y = 0; y < CFAAScale; y++) {
+					vec2 subPixelSamplePos = VertOut.TexCoords + vec2(texelSize.x * x, texelSize.y * y);
+
+					Diffuse  += texture(gDiffuse,  subPixelSamplePos).rgb;
+					Normal   += texture(gNormal,   subPixelSamplePos).rgb;
+					FragPos  += texture(gPosition, subPixelSamplePos).rgb;
+					Specular += texture(gSMR,      subPixelSamplePos).r;
+					totalSamples += 1.0;
 				}
 			}
+			Diffuse /= totalSamples;
+			Normal = normalize(Normal);
+			FragPos /= totalSamples;
+			Specular /= totalSamples;
 		} else {
 			Diffuse = texture(gDiffuse, VertOut.TexCoords).rgb;
 			Normal = texture(gNormal, VertOut.TexCoords).rgb;

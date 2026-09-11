@@ -1,19 +1,12 @@
 #pragma once
 
-#include <iostream>
-#include <map>
-#include <thread>
-#include <vector>
 #include <chrono>
 
 #include <Core/Common.h>
 #include <Math/Rect.h>
-#include "Settings.h"
-#include <Platform/PlatformAPI.h>
 #include <Platform/AGBuffer.h>
 
 #include <Classes/Assets/Shader.h>
-#include <Classes/Objects/SceneRoot.h>
 #include <Interface/Project.h>
 #include "Models/BaseScene.h"
 #include "Buffers/UniformBufferObject.h"
@@ -33,19 +26,19 @@ namespace Refraction::Engine {
 		Renderer();
 
 		void Init();
-		void RenderFrame(Common::Shared<Project> projectInstance);
+		void RenderFrame(const Common::Shared<Project> &projectInstance);
 
-		void SetViewport(Math::Rect rect) { mViewportRect = rect; };
+		void SetViewport(const Math::Rect rect) { mViewportRect = rect; };
 
-		RendererState GetState() { return mState; }
-		Common::Ref<Assets::Image> GetFinalOutput() const { return mFinalOutput; }
+		[[nodiscard]] RendererState GetState() const { return mState; }
+		[[nodiscard]] Common::Ref<Assets::Image> GetFinalOutput() const { return mFinalOutput; }
 	private:
-		void UpdateUniformBuffers(Common::Shared<Project> projectInstance);
+		void UpdateUniformBuffers(const Common::Shared<Project> &projectInstance);
 		void Cleanup();
 
 		// Deferred shading functions
-		void DSPassGeometry(Common::Shared<Project> projectInstance);
-		void DSPassLighting(Common::Shared<Project> projectInstance);
+		void DSPassGeometry(const Common::Shared<Project> &projectInstance) const;
+		void DSPassLighting(const Common::Shared<Project> &projectInstance) const;
 		void DSPassFinal() const;
 
 		RendererState mState = RendererState::NONE;

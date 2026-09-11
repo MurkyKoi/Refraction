@@ -47,17 +47,17 @@ namespace Refraction::Engine {
 		bool Open(const std::filesystem::path& projectPath);
 
 		// Saves the project to disk, returns success
-		bool Save();
+		bool Save() const;
 		// Closes the currently loaded project
 		void Close();
 
 		// Handles a message sent by a live collaboration server
-		void ProcessRemoteMessage(std::string message);
+		void ProcessRemoteMessage(const std::string& message);
 
 		// Creates a new scene under the active project, returns the new SceneRoot (nullptr if failed)
 		Common::Ref<Objects::SceneRoot> NewScene();
 		// Loads a scene under the active project, returns success
-		bool OpenScene(UUID sceneUUID);
+		bool OpenScene(const UUID& sceneUUID);
 		// Returns the currently open scene
 		[[nodiscard]] inline Common::Ref<Objects::SceneRoot> GetActiveScene() const { return mActiveScene; }
 		// Returns all scenes under this project

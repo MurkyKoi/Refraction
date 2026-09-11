@@ -18,6 +18,10 @@ namespace Refraction::Engine::Platform {
 			};
 			auto newTex = Common::NewShared<OpenGLTexture>(texStruct);
 			newTex->Activate(0);
+			const GLenum format = (c == 4) ? GL_RGBA : GL_RGB;
+			const GLint internalFormat = (c == 4) ? GL_RGBA8 : GL_RGB8;
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
 
 			// Enable wrapping (repeat)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -55,7 +59,7 @@ namespace Refraction::Engine::Platform {
 		glGenTextures(1, &mBufferID);
 	}
 
-	void OpenGLTexture::Activate(unsigned int unitOffset) {
+	void OpenGLTexture::Activate(const unsigned int unitOffset) {
 		glActiveTexture(GL_TEXTURE0 + unitOffset);
 		glBindTexture(GL_TEXTURE_2D, mBufferID);
 	}
@@ -66,6 +70,9 @@ namespace Refraction::Engine::Platform {
 
 		switch (texStruct.Format) {
 		default: case TextureFormat::NONE:
+				iFmt = GL_DEPTH_COMPONENT24;
+				fmt = GL_DEPTH_COMPONENT;
+				type = GL_FLOAT;
 			break;
 		case TextureFormat::R8:
 			iFmt = GL_R8;
@@ -104,14 +111,21 @@ namespace Refraction::Engine::Platform {
 			break;
 		}
 
-		Activate(0);
-
+		glActiveTexture(GL_TEXTURE31);
+		glBindTexture(GL_TEXTURE_2D, mBufferID);
 		glTexImage2D(GL_TEXTURE_2D, 0, iFmt, texStruct.Width, texStruct.Height, 0, fmt, type, nullptr);
+
 		if (texStruct.MipsEnabled) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}
 		mStructure = texStruct;
+
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	void OpenGLTexture::Unload() {

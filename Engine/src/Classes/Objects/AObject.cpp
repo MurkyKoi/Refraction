@@ -101,7 +101,7 @@ namespace Refraction::Objects {
 				json["Children"][child->GetUUID().Serialise()] = child->Serialise();
 			}
 
-			Log::SInfo("Serialised object " + mInstanceName + " with UUID " + mUUID.AsString());
+			//Log::SInfo("Serialised object " + mInstanceName + " with UUID " + mUUID.AsString());
 		});
 	}
 	void AObject::Deserialise(std::string serialised) {
@@ -123,7 +123,7 @@ namespace Refraction::Objects {
 				mChildren.push_back(newChild);
 			}
 
-			Log::SInfo("Deserialised object " + mInstanceName + " with UUID " + mUUID.AsString());
+			//Log::SInfo("Deserialised object " + mInstanceName + " with UUID " + mUUID.AsString());
 		});
 	}
 

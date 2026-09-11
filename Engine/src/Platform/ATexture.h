@@ -9,7 +9,7 @@
 
 namespace Refraction::Engine::Platform {
 	enum class TextureFormat {
-		NONE = 0,
+		NONE = 0, // Defaults to depth
 		R8,
 		RGB8,
 		RGB16F,

@@ -21,9 +21,9 @@ void BaseLight::UpdateShaderUniforms(unsigned int index) {
 	const float linear = 0.8f;
 	const float quadratic = 0.4f;
 	const float radius = 200.0f;
-	shader->SetUniformVec3("lights[" + std::to_string(index) + "].Position", mTransform->GetWorldPosition());
-	shader->SetUniformVec3("lights[" + std::to_string(index) + "].Color", mLightColor);
-	shader->SetUniformFloat("lights[" + std::to_string(index) + "].Linear", linear);
-	shader->SetUniformFloat("lights[" + std::to_string(index) + "].Quadratic", quadratic);
-	shader->SetUniformFloat("lights[" + std::to_string(index) + "].Radius", radius);
+	//shader->SetUniformVec3("lights[" + std::to_string(index) + "].Position", mTransform->GetWorldPosition());
+	//shader->SetUniformVec3("lights[" + std::to_string(index) + "].Color", mLightColor);
+	//shader->SetUniformFloat("lights[" + std::to_string(index) + "].Linear", linear);
+	//shader->SetUniformFloat("lights[" + std::to_string(index) + "].Quadratic", quadratic);
+	//shader->SetUniformFloat("lights[" + std::to_string(index) + "].Radius", radius);
 }

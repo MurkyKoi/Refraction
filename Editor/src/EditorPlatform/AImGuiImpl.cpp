@@ -99,9 +99,8 @@ namespace Refraction::Editor {
 				if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, project->IsLoaded())) {
 					project->Save();
 				}
-				if (ImGui::MenuItem("Close", 0, nullptr, project->IsLoaded())) {
+				if (ImGui::MenuItem("Close", nullptr, nullptr, project->IsLoaded())) {
 					mCloseProjectModal = true;
-					//project->Close();
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Quit", "Alt+F4")) {
@@ -119,30 +118,38 @@ namespace Refraction::Editor {
 			}
 			if (ImGui::BeginMenu("View")) {
 				auto& graphicsSettings = Settings::CurrentSettings->Graphics;
-				ImGui::MenuItem("Wireframe", 0, &graphicsSettings.WireframeEnabled);
-				ImGui::MenuItem("CFAA", 0, &graphicsSettings.CFAAEnabled);
+				ImGui::MenuItem("Wireframe", nullptr, &graphicsSettings.WireframeEnabled);
+				ImGui::MenuItem("CFAA", nullptr, &graphicsSettings.CFAAEnabled);
+				if (ImGui::BeginMenu("CFAA Scale")) {
+					if (ImGui::MenuItem("x2", nullptr, graphicsSettings.CFAAScale == 2)) graphicsSettings.CFAAScale = 2;
+					if (ImGui::MenuItem("x3", nullptr, graphicsSettings.CFAAScale == 3)) graphicsSettings.CFAAScale = 3;
+					if (ImGui::MenuItem("x4", nullptr, graphicsSettings.CFAAScale == 4)) graphicsSettings.CFAAScale = 4;
+					if (ImGui::MenuItem("x6", nullptr, graphicsSettings.CFAAScale == 6)) graphicsSettings.CFAAScale = 6;
+					if (ImGui::MenuItem("x8", nullptr, graphicsSettings.CFAAScale == 8)) graphicsSettings.CFAAScale = 8;
+					ImGui::EndMenu();
+				}
 				if (ImGui::BeginMenu("Shader Data")) {
-					if (ImGui::MenuItem("Final Image", 0, (graphicsSettings.ViewportDataView == 0))) graphicsSettings.ViewportDataView = 0;
-					if (ImGui::MenuItem("Depth", 0, (graphicsSettings.ViewportDataView == 1))) graphicsSettings.ViewportDataView = 1;
-					if (ImGui::MenuItem("Diffuse", 0, (graphicsSettings.ViewportDataView == 2))) graphicsSettings.ViewportDataView = 2;
-					if (ImGui::MenuItem("Specular", 0, (graphicsSettings.ViewportDataView == 3))) graphicsSettings.ViewportDataView = 3;
-					if (ImGui::MenuItem("Normals", 0, (graphicsSettings.ViewportDataView == 4))) graphicsSettings.ViewportDataView = 4;
-					if (ImGui::MenuItem("CFAA Contrast", 0, (graphicsSettings.ViewportDataView == 5))) graphicsSettings.ViewportDataView = 5;
+					if (ImGui::MenuItem("Final Image", nullptr, (graphicsSettings.ViewportDataView == 0))) graphicsSettings.ViewportDataView = 0;
+					if (ImGui::MenuItem("Depth", nullptr, (graphicsSettings.ViewportDataView == 1))) graphicsSettings.ViewportDataView = 1;
+					if (ImGui::MenuItem("Diffuse", nullptr, (graphicsSettings.ViewportDataView == 2))) graphicsSettings.ViewportDataView = 2;
+					if (ImGui::MenuItem("Specular", nullptr, (graphicsSettings.ViewportDataView == 3))) graphicsSettings.ViewportDataView = 3;
+					if (ImGui::MenuItem("Normals", nullptr, (graphicsSettings.ViewportDataView == 4))) graphicsSettings.ViewportDataView = 4;
+					if (ImGui::MenuItem("CFAA Contrast", nullptr, (graphicsSettings.ViewportDataView == 5))) graphicsSettings.ViewportDataView = 5;
 					ImGui::EndMenu();
 				}
 				ImGui::Separator();
-				ImGui::MenuItem("Viewport", 0, &EditorState::Temp.PanelViewportVisible);
-				ImGui::MenuItem("Properties", 0, &EditorState::Temp.PanelPropertiesVisible);
-				ImGui::MenuItem("Explorer", 0, &EditorState::Temp.PanelExplorerVisible);
-				ImGui::MenuItem("Statistics", 0, &EditorState::Temp.PanelStatisticsVisible);
-				ImGui::MenuItem("Collaboration", 0, &EditorState::Temp.PanelLiveCollabVisible);
-				ImGui::MenuItem("Log", 0, &EditorState::Temp.PanelLogVisible);
+				ImGui::MenuItem("Viewport", nullptr, &EditorState::Temp.PanelViewportVisible);
+				ImGui::MenuItem("Properties", nullptr, &EditorState::Temp.PanelPropertiesVisible);
+				ImGui::MenuItem("Explorer", nullptr, &EditorState::Temp.PanelExplorerVisible);
+				ImGui::MenuItem("Statistics", nullptr, &EditorState::Temp.PanelStatisticsVisible);
+				ImGui::MenuItem("Collaboration", nullptr, &EditorState::Temp.PanelLiveCollabVisible);
+				ImGui::MenuItem("Log", nullptr, &EditorState::Temp.PanelLogVisible);
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Tools")) {
-				ImGui::MenuItem("Theme Editor", 0, &mShowThemeEditor);
+				ImGui::MenuItem("Theme Editor", nullptr, &mShowThemeEditor);
 				ImGui::Separator();
-				ImGui::MenuItem("ImGui Demo Window", 0, &mShowDemoWindow);
+				ImGui::MenuItem("ImGui Demo Window", nullptr, &mShowDemoWindow);
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();

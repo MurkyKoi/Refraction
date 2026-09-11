@@ -185,10 +185,8 @@ namespace Refraction::Math {
 		}
 
 		// Translate matrix using a Vector3
-		}
-
+		Matrix4 Translate(const Vector3& v);
 		// Rotate using a Quaternion
-		Matrix4 Rotate(Quaternion quat);
 		Matrix4 Rotate(const Quaternion &quat);
 		Matrix4 Scale(const Vector3 &scale);
 

@@ -228,6 +228,10 @@ namespace Refraction::Math {
 	    result[1][2] = lhs[1][0] * r02 + lhs[1][1] * r12 + lhs[1][2] * r22;
 	    result[1][3] = lhs[1][3];
 
+	    result[2][0] = lhs[2][0] * r00 + lhs[2][1] * r10 + lhs[2][2] * r20;
+	    result[2][1] = lhs[2][0] * r01 + lhs[2][1] * r11 + lhs[2][2] * r21;
+	    result[2][2] = lhs[2][0] * r02 + lhs[2][1] * r12 + lhs[2][2] * r22;
+	    result[2][3] = lhs[2][3];
 
 	    result[3][0] = lhs[3][0] * r00 + lhs[3][1] * r10 + lhs[3][2] * r20;
 	    result[3][1] = lhs[3][0] * r01 + lhs[3][1] * r11 + lhs[3][2] * r21;

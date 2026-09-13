@@ -129,12 +129,12 @@ namespace Refraction::Editor {
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("Shader Data")) {
-					if (ImGui::MenuItem("Final Image", nullptr, (graphicsSettings.ViewportDataView == 0))) graphicsSettings.ViewportDataView = 0;
-					if (ImGui::MenuItem("Depth", nullptr, (graphicsSettings.ViewportDataView == 1))) graphicsSettings.ViewportDataView = 1;
-					if (ImGui::MenuItem("Diffuse", nullptr, (graphicsSettings.ViewportDataView == 2))) graphicsSettings.ViewportDataView = 2;
-					if (ImGui::MenuItem("Specular", nullptr, (graphicsSettings.ViewportDataView == 3))) graphicsSettings.ViewportDataView = 3;
-					if (ImGui::MenuItem("Normals", nullptr, (graphicsSettings.ViewportDataView == 4))) graphicsSettings.ViewportDataView = 4;
-					if (ImGui::MenuItem("CFAA Contrast", nullptr, (graphicsSettings.ViewportDataView == 5))) graphicsSettings.ViewportDataView = 5;
+					if (ImGui::MenuItem("Final Image", nullptr, graphicsSettings.ViewportDataView == 0)) graphicsSettings.ViewportDataView = 0;
+					if (ImGui::MenuItem("Depth", nullptr, graphicsSettings.ViewportDataView == 1)) graphicsSettings.ViewportDataView = 1;
+					if (ImGui::MenuItem("Diffuse", nullptr, graphicsSettings.ViewportDataView == 2)) graphicsSettings.ViewportDataView = 2;
+					if (ImGui::MenuItem("Specular", nullptr, graphicsSettings.ViewportDataView == 3)) graphicsSettings.ViewportDataView = 3;
+					if (ImGui::MenuItem("Normals", nullptr, graphicsSettings.ViewportDataView == 4)) graphicsSettings.ViewportDataView = 4;
+					if (ImGui::MenuItem("CFAA Contrast", nullptr, graphicsSettings.ViewportDataView == 5)) graphicsSettings.ViewportDataView = 5;
 					ImGui::EndMenu();
 				}
 				ImGui::Separator();

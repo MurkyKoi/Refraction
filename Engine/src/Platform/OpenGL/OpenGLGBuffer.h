@@ -13,9 +13,7 @@ namespace Refraction::Engine::Platform {
 		void SetShaderTextureIDs() const override;
 
 		void StartFrame() override;
-		void BindFramebufferWrite() override;
-		void BindFramebufferRead() override;
-		void BindFramebufferFull() override;
+
 		void BindCFAAPrepass() override;
 		void BindGeometryPass() override;
 		void BindLightingPass() override;

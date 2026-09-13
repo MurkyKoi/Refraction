@@ -14,7 +14,8 @@ namespace Refraction::Engine::Platform {
 				.Width = w,
 				.Height = h,
 				.Format = TextureFormat::RGB8,
-				.MipsEnabled = true
+				.Filtering = TextureFiltering::POINT,
+				.MipmapMode = TextureMipmapMode::BILINEAR,
 			};
 			auto newTex = Common::NewShared<OpenGLTexture>(texStruct);
 			newTex->Activate(0);
@@ -115,13 +116,45 @@ namespace Refraction::Engine::Platform {
 		glBindTexture(GL_TEXTURE_2D, mBufferID);
 		glTexImage2D(GL_TEXTURE_2D, 0, iFmt, texStruct.Width, texStruct.Height, 0, fmt, type, nullptr);
 
-		if (texStruct.MipsEnabled) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glGenerateMipmap(GL_TEXTURE_2D);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		switch (texStruct.MipmapMode) {
+			default: case TextureMipmapMode::DISABLED:
+				switch (texStruct.Filtering) {
+					default: case TextureFiltering::POINT:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						break;
+					case TextureFiltering::BILINEAR:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						break;
+				}
+				break;
+			case TextureMipmapMode::POINT:
+				switch (texStruct.Filtering) {
+					default: case TextureFiltering::POINT:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						break;
+					case TextureFiltering::BILINEAR:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						break;
+				}
+				glGenerateMipmap(GL_TEXTURE_2D);
+				break;
+			case TextureMipmapMode::BILINEAR:
+				switch (texStruct.Filtering) {
+					default: case TextureFiltering::POINT:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						break;
+					case TextureFiltering::BILINEAR:
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						break;
+				}
+				glGenerateMipmap(GL_TEXTURE_2D);
+				break;
 		}
 		mStructure = texStruct;
 

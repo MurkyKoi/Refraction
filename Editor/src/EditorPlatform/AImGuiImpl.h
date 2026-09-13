@@ -16,7 +16,8 @@ namespace Refraction::Editor::Platform {
 	public:
 		Common::Shared<Objects::AObject> mSelectedObject = nullptr;
 
-		AImGuiImpl(Common::Shared<Engine::Platform::AWindow> window);
+		explicit AImGuiImpl(Common::Shared<Engine::Platform::AWindow> window);
+		virtual ~AImGuiImpl() = default;
 
 		virtual void Init() = 0;
 		virtual void BeginDraw() = 0;
@@ -28,7 +29,7 @@ namespace Refraction::Editor::Platform {
 		void DrawRibbon();
 		void DrawStatsBar();
 
-		inline bool ShouldQuit() const { return mShouldQuit; }
+		[[nodiscard]] bool ShouldQuit() const { return mShouldQuit; }
 
 	protected:
 		Common::Shared<Engine::Platform::AWindow> mWindow;

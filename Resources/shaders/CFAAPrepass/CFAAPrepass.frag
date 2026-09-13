@@ -5,7 +5,6 @@ layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec3 gPosition;
 layout (location = 3) out vec3 gSMR;
 layout (location = 4) out float gDepth;
-layout (location = 5) out float gContrast; // For CFAA
 
 in vec4 FragColor;
 in vec3 FragPos;
@@ -21,4 +20,5 @@ void main()
     gNormal = normalize(Normal);
     gPosition = FragPos;
     gSMR = vec3(texture(tSpecular, TexCoords).r, 0.0, 0.0);
+    gDepth = gl_FragCoord.z;
 }

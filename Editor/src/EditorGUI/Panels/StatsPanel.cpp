@@ -19,9 +19,9 @@ namespace Refraction::Editor::GUI {
 
 	void StatsPanel::OnDraw() {
 		// Don't update FPS graph if nothing is loaded
-		auto& project = EditorState::Temp.ProjectInstance;
+		const auto& project = EditorState::Temp.ProjectInstance;
 		if (project->IsLoaded()) {
-			mDeltaHistory.push_back((float)Time::RenderDelta * 1000);
+			mDeltaHistory.push_back(static_cast<float>(Time::RenderDelta) * 1000);
 			if (mDeltaHistory.size() > ImGuiImpl_DeltaHistoryMax) {
 				mDeltaHistory.pop_front();
 				mDeltaHistory.shrink_to_fit();
@@ -34,19 +34,28 @@ namespace Refraction::Editor::GUI {
 			values[i] = mDeltaHistory[i];
 			average += mDeltaHistory[i];
 		}
-		average /= mDeltaHistory.size();
+		average /= static_cast<float>(mDeltaHistory.size());
 
 		if (!EditorState::Temp.PanelStatisticsVisible) return;
 		ImGui::SetNextWindowSizeConstraints({ 150, 50 }, { FLT_MAX, FLT_MAX });
 		ImGui::Begin("Stats", &EditorState::Temp.PanelStatisticsVisible);
 
-		auto scene = project->GetActiveScene();
-		auto& camera = Objects::Camera::ActiveCamera;
+		const auto scene = project->GetActiveScene();
+		const auto& camera = Objects::Camera::ActiveCamera;
+		const auto& settings = Settings::CurrentSettings;
+		const bool cfaaEnabled = settings->Graphics.CFAAEnabled;
+		Math::Vector2 viewportPos, viewportSize;
+		mViewportRect.ToVector2(viewportPos, viewportSize);
 		if (ImGui::TreeNodeEx("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::PlotLines("FPS", values, ImGuiImpl_DeltaHistoryMax, 0, std::format("Avg {:.3f}ms", average).c_str(), 0, 100.0f, ImVec2(0, 80.0f));
 			ImGui::Text(std::format("Elapsed: {:.3f}s", Time::GetSessionSec()));
 			ImGui::Text(std::format("Delta: {:.3f}ms", Time::RenderDelta * 1000));
 			ImGui::Text(std::format("FPS: {}", Utilities::DeltaToRate(Time::RenderDelta, 3)));
+			ImGui::Text(std::format("Viewport Resolution: {}", viewportSize.ToString({.AsInt = true, .Pretty = false})));
+			ImGui::Text(std::format("CFAA: {}", cfaaEnabled ? "Active" : "Inactive"));
+			if (!cfaaEnabled) ImGui::BeginDisabled();
+			ImGui::Text(std::format("CFAA Resolution: {}", (viewportSize * settings->Graphics.CFAAScale).ToString({.AsInt = true, .Pretty = false})));
+			if (!cfaaEnabled) ImGui::EndDisabled();
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Input")) {
@@ -85,5 +94,11 @@ namespace Refraction::Editor::GUI {
 		if (scene.expired()) ImGui::EndDisabled();
 
 		ImGui::End();
+	}
+
+	void StatsPanel::OnEvent(const Common::Shared<Events::Event> event) {
+		if (const auto e = Common::AsA<Events::ViewportResizedEvent>(event)) {
+			mViewportRect = e->mViewportRect;
+		}
 	}
 }

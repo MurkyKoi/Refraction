@@ -197,19 +197,18 @@ namespace Refraction::Engine {
 		const int upscaledH = mViewportRect.h * (graphicsSettings.CFAAEnabled ? graphicsSettings.CFAAScale : 1);
 		glViewport(0, 0, upscaledW, upscaledH);
 
-		if (graphicsSettings.WireframeEnabled) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		}
 
 		const auto shader = mGeomPassShader.lock();
 		shader->Activate();
 		shader->SetUniformBool("usingCFAA", graphicsSettings.CFAAEnabled);
 		shader->SetUniformInt("CFAAScale", graphicsSettings.CFAAEnabled ? graphicsSettings.CFAAScale : 1);
-		shader->SetUniformFloat("viewNear", Objects::Camera::ActiveCamera->mFrustum.zNear);
-		shader->SetUniformFloat("viewFar", Objects::Camera::ActiveCamera->mFrustum.zFar);
 
 		if (graphicsSettings.CFAAEnabled) {
 			mGBuffer->BindCFAATexturesForSampling();
+		}
+
+		if (graphicsSettings.WireframeEnabled) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
 		scene->RenderScene(projectInstance->GetGlobalObjects());
@@ -256,7 +255,7 @@ namespace Refraction::Engine {
 	void Renderer::DSPassFinal() const {
 		mGBuffer->BindFinalPass();
 
-		glBlitFramebuffer(0, 0, mViewportRect.w, mViewportRect.h, 0, 0, mViewportRect.w, mViewportRect.h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, mViewportRect.w, mViewportRect.h, 0, 0, mViewportRect.w, mViewportRect.h, GL_DEPTH_BUFFER_BIT, GL_LINEAR);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 

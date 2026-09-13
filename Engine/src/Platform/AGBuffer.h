@@ -19,9 +19,7 @@ namespace Refraction::Engine::Platform {
 		virtual void SetShaderTextureIDs() const = 0;
 
 		virtual void StartFrame() = 0;
-		virtual void BindFramebufferWrite() = 0;
-		virtual void BindFramebufferRead() = 0;
-		virtual void BindFramebufferFull() = 0;
+
 		virtual void BindCFAAPrepass() = 0;
 		virtual void BindGeometryPass() = 0;
 		virtual void BindLightingPass() = 0;

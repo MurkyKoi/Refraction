@@ -8,13 +8,14 @@ namespace Refraction::Editor::GUI {
 	class StatsPanel : public AEditorPanel {
 	public:
 		using AEditorPanel::AEditorPanel;
-		~StatsPanel() = default;
+		~StatsPanel() override = default;
 
 		void Init() override;
 		void OnDraw() override;
-		void OnEvent(Common::Shared<Events::Event> event) override {}
+		void OnEvent(Common::Shared<Events::Event> event) override;
 
 	private:
 		std::deque<float> mDeltaHistory = {};
+		Math::Rect mViewportRect;
 	};
 }

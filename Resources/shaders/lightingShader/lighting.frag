@@ -70,26 +70,17 @@ void main() {
 		// calculate lighting
 		vec3 lighting = Diffuse * ambient;
 		vec3 viewDir = normalize(viewPos - FragPos);
-		for(int i = 0; i < NR_LIGHTS; ++i) {
-			// calculate distance between light source and current fragment
-			float fragDistance = length(lights[i].Position - FragPos);
-			if(fragDistance < lights[i].Radius) {
-				// diffuse
-				vec3 lightDir = normalize(lights[i].Position - FragPos);
-				vec3 diffuseVal = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
+		// diffuse
+		vec3 lightDir = normalize(vec3(5000, 8000, 4000));
+		vec3 lightCol = vec3(1.0, 1.0, 1.0);
+		vec3 diffuseVal = max(dot(Normal, lightDir), 0.0) * Diffuse * lightCol;
 
-				// specular
-				vec3 halfwayDir = normalize(lightDir + viewDir);  
-				float specPower = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-				vec3 specularVal = lights[i].Color * specPower * Specular;
+		// specular
+		vec3 halfwayDir = normalize(lightDir + viewDir);
+		float specPower = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+		vec3 specularVal = lightCol * specPower * Specular;
 
-				// attenuation
-				float attenuation = 1.0 / (1.0 + lights[i].Linear * fragDistance + lights[i].Quadratic * fragDistance * fragDistance);
-				diffuseVal *= attenuation;
-				specularVal *= attenuation;
-				lighting += diffuseVal + specularVal;
-			}
-		}
+		lighting += diffuseVal + specularVal;
 		FragColor = vec4(lighting, 1.0);
 	} break;
 	case 1: { // Depth
@@ -110,7 +101,7 @@ void main() {
 		FragColor = vec4(Normal.x, Normal.y, Normal.z, 1.0);
 	} break;
 	case 5: { // CFAA Contrast
-		float contrast = texture(gCFAAData, VertOut.TexCoords).r;
-		FragColor = vec4(contrast, contrast, contrast, 1.0);
+		vec3 contrast = texture(gCFAAData, VertOut.TexCoords).rgb;
+		FragColor = vec4(contrast.r, contrast.g, contrast.b, 1.0);
 	} break; }
 }

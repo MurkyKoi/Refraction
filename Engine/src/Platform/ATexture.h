@@ -18,12 +18,22 @@ namespace Refraction::Engine::Platform {
 		RGBA16F,
 		RGBA32F
 	};
+	enum class TextureFiltering {
+		POINT = 0,
+		BILINEAR
+	};
+	enum class TextureMipmapMode {
+		DISABLED = 0,
+		POINT,
+		BILINEAR
+	};
 
 	struct TextureStructure {
 		int Width = 1;
 		int Height = 1;
 		TextureFormat Format = TextureFormat::RGBA8;
-		bool MipsEnabled = true;
+		TextureFiltering Filtering = TextureFiltering::POINT;
+		TextureMipmapMode MipmapMode = TextureMipmapMode::DISABLED;
 	};
 
 	class ATexture : public std::enable_shared_from_this<ATexture> {

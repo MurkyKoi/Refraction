@@ -4,9 +4,6 @@
 #include "Shader.h"
 
 namespace Refraction::Assets {
-	std::unordered_map<std::string, uint64_t> Shader::LoadedShaders = {};
-
-
 	nlohmann::json ShaderMetadata::Serialise() {
 		auto result = AssetMetadata::Serialise();
 		return result;
@@ -36,7 +33,7 @@ namespace Refraction::Assets {
 	}
 
 	Shader::~Shader() {
-		if (LoadedShaders.empty()) return;
+		if (!Common::RuntimeExternalReady) return;
 		if (glIsProgram(mID)) {
 			glDeleteProgram(mID);
 		}
@@ -139,8 +136,6 @@ namespace Refraction::Assets {
 		glDeleteShader(frag);
 		if (CheckLogErrors(mID, "PROGRAM")) return;
 		Log::Render.Info("Linked shader program");
-
-		LoadedShaders[mName] = meta->AssetUUID.AsInt();
 	}
 
 	GLint Shader::GetUniformLocation(std::string name) const {

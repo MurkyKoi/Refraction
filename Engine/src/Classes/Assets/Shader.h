@@ -53,7 +53,7 @@ namespace Refraction::Assets {
 		unsigned int mID = 0;
 		std::string mName;
 
-		GLint GetUniformLocation(std::string name) const;
+		[[nodiscard]] GLint GetUniformLocation(std::string name) const;
 	};
 
 	RFCT_ASSET_REGISTERFACTORY(Shader)

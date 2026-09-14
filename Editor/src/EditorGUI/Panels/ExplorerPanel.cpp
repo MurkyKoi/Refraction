@@ -8,25 +8,28 @@
 #include "ExplorerPanel.h"
 
 namespace Refraction::Editor::GUI {
-	static void MakeTree(Common::Shared<Objects::AObject> obj) {
+	static void MakeTree(const Common::Shared<Objects::AObject>& obj) {
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
 		auto& currentlySelected = EditorState::Temp.SelectedObject;
-		if (currentlySelected && (obj->GetUUID().AsInt() == currentlySelected->GetUUID().AsInt())) flags |= ImGuiTreeNodeFlags_Selected;
-		if (obj->GetChildren()->size() < 1) flags |= ImGuiTreeNodeFlags_Leaf;
+		if (currentlySelected && obj == currentlySelected) flags |= ImGuiTreeNodeFlags_Selected;
+		if (obj->GetChildren()->empty()) flags |= ImGuiTreeNodeFlags_Leaf;
 
-		auto isOpen = ImGui::TreeNodeEx(std::format("{}##{}ExplorerTreeNode", obj->mInstanceName, obj->GetUUID().AsString()).c_str(), flags);
+		const auto nodeName = std::format("{}##{}ExplorerTreeNode", obj->mInstanceName, obj->GetUUID().AsString());
+		const auto isOpen = ImGui::TreeNodeEx(nodeName.c_str(), flags);
 		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
 			currentlySelected = obj;
-			if (ImGui::BeginPopup("ExplorerItemPopup")) {
-				if (ImGui::Button("Delete")) {
-					obj->mParent->RemoveChild(obj->GetUUID());
-				}
-				ImGui::EndPopup();
-			}
 		}
 		if (isOpen) {
-			for (auto& child : *obj->GetChildren()) {
+			if (obj == currentlySelected && ImGui::BeginPopupContextItem(nodeName.c_str())) {
+				if (ImGui::Button("Add Child")) {
+					const auto newObj = Common::NewShared<Objects::AObject>();
+					obj->AddChild(newObj);
+				}
+				if (ImGui::Button("Delete")) obj->mParent->RemoveChild(obj->GetUUID());
+				ImGui::EndPopup();
+			}
+			for (const auto& child : *obj->GetChildren()) {
 				MakeTree(child);
 			}
 			ImGui::TreePop();
@@ -40,38 +43,27 @@ namespace Refraction::Editor::GUI {
 		ImGui::Begin("Explorer", &EditorState::Temp.PanelExplorerVisible);
 		if (EditorState::Temp.SimulatingGame) ImGui::BeginDisabled();
 
-		auto& project = EditorState::Temp.ProjectInstance;
-		if (!project->IsLoaded()) {
+		if (const auto& project = EditorState::Temp.ProjectInstance; !project->IsLoaded()) {
 			ImGui::Text("No project loaded");
 		} else {
+			ImGui::SeparatorText("Scenes"); ImGui::SameLine();
+			if (ImGui::Button("Add Scene")) {
+				project->NewScene();
+			}
 			for (auto& sceneWeak : project->GetScenes()) {
 				if (sceneWeak.expired()) continue;
 				MakeTree(sceneWeak.lock());
+			}
+			ImGui::SeparatorText("Global Objects"); ImGui::SameLine();
+			if (ImGui::Button("Add")) {
+				// TODO: Object spawner menu
+				const auto newObj = Common::NewShared<Objects::AObject>();
+				project->NewGlobalObject();
 			}
 			for (auto& globalObjWeak : project->GetGlobalObjects()) {
 				if (globalObjWeak.expired()) continue;
 				MakeTree(globalObjWeak.lock());
 			}
-		}
-		auto activeScene = project->GetActiveScene().lock();
-		if (activeScene && ImGui::BeginPopupContextWindow("ExplorerPopup")) {
-			if (!project->IsLoaded()) ImGui::BeginDisabled();
-			if (ImGui::BeginMenu("Add Object...")) {
-				if (ImGui::MenuItem("Empty Object")) {
-					auto newObj = Common::NewShared<Objects::AObject>();
-					activeScene->AddChild(newObj);
-				}
-				if (ImGui::MenuItem("Basic Object")) {
-					auto newObj = Common::NewShared<Objects::BasicObject>();
-					activeScene->AddChild(newObj);
-				}
-				if (ImGui::MenuItem("Scene")) {
-					project->NewScene();
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndPopup();
-			if (!project->IsLoaded()) ImGui::EndDisabled();
 		}
 
 		if (EditorState::Temp.SimulatingGame) ImGui::EndDisabled();

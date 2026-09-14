@@ -56,6 +56,7 @@ namespace Refraction::Engine {
 
 		// Creates a new scene under the active project, returns the new SceneRoot (nullptr if failed)
 		Common::Ref<Objects::SceneRoot> NewScene();
+		Common::Ref<Objects::AObject> NewGlobalObject();
 		// Loads a scene under the active project, returns success
 		bool OpenScene(const UUID& sceneUUID);
 		// Returns the currently open scene
@@ -80,6 +81,7 @@ namespace Refraction::Engine {
 
 		[[nodiscard]] inline bool IsLoaded() const { return !mProjectPath.empty(); }
 		[[nodiscard]] inline bool IsRemote() const { return mProjectData.IsRemote; }
+
 	private:
 		std::filesystem::path mProjectPath;
 		ProjectData mProjectData;

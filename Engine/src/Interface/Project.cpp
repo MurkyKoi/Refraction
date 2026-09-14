@@ -503,6 +503,7 @@ namespace Refraction::Engine {
 	}
 
 	Common::Ref<Objects::SceneRoot> Project::NewScene() {
+		if (!IsLoaded()) return {};
 		Log::Project.Info("Creating a new scene");
 		const auto newScene = Common::NewShared<Objects::SceneRoot>();
 		mRootObject->AddChild(newScene);
@@ -544,6 +545,14 @@ namespace Refraction::Engine {
 			newScene->AddChild(baseplate);
 		}
 		return mActiveScene;
+	}
+
+	Common::Ref<Objects::AObject> Project::NewGlobalObject() {
+		if (!IsLoaded()) return {};
+		const auto newObject = Common::NewShared<Objects::AObject>();
+		mRootObject->AddChild(newObject);
+		mProjectData.GlobalObjects.push_back(newObject);
+		return newObject;
 	}
 
 	bool Project::OpenScene(const UUID& sceneUUID) {

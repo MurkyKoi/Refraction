@@ -6,7 +6,7 @@ namespace Refraction::Editor::GUI {
 	class PropertiesPanel : public AEditorPanel {
 	public:
 		using AEditorPanel::AEditorPanel;
-		~PropertiesPanel() = default;
+		~PropertiesPanel() override = default;
 
 		void Init() override {}
 		void OnDraw() override;

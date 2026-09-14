@@ -49,20 +49,20 @@ namespace Refraction::Editor::GUI {
 
 	}
 
-	static void DrawComponentProperties(Common::Shared<Components::AComponent> component) {
-		std::string compFullTypeName = typeid(component).name();
-		auto compTypeName = compFullTypeName.substr(compFullTypeName.find_last_of(':') + 1);
+	static void DrawComponentProperties(const Common::Shared<Components::AComponent>& component) {
+		const std::string compFullTypeName = typeid(component).name();
+		const auto compTypeName = compFullTypeName.substr(compFullTypeName.find_last_of(':') + 1);
 		ImGui::Text("Component Type: " + compTypeName);
 		ImGui::Text("UUID: " + component->GetUUID().AsString());
 
-		if (auto casted = Common::AsA<Components::Mesh>(component)) {
-			auto model = casted->mModel.lock();
+		if (const auto asMesh = Common::AsA<Components::Mesh>(component)) {
+			const auto model = asMesh->mModel.lock();
 			if (model) {
 				Common::Ref<Assets::ModelMetadata> metaWeak;
 				Engine::AssetManager::Try([&](const Common::Shared<Engine::AssetManager>& manager) {
 					metaWeak = manager->FetchMetadata<Assets::ModelMetadata>(model->GetUUID());
 				});
-				if (auto meta = metaWeak.lock()) {
+				if (const auto meta = metaWeak.lock()) {
 					ImGui::Text("Mesh Source: " + meta->AssetPath.string());
 				} else {
 					ImGui::Text("Mesh Source:");
@@ -71,11 +71,11 @@ namespace Refraction::Editor::GUI {
 				ImGui::Text("Mesh Source:");
 			}
 			ImGui::Spacing();
-			DrawTransformControls(casted->mTransform, "Mesh");
-		} else if (auto casted = Common::AsA<Components::APhysics>(component)) {
-			ImGuiSliderFlags flags = ImGuiSliderFlags_ColorMarkers;
+			DrawTransformControls(asMesh->mTransform, "Mesh");
+		} else if (const auto asPhysics = Common::AsA<Components::APhysics>(component)) {
+			constexpr ImGuiSliderFlags flags = ImGuiSliderFlags_ColorMarkers;
 			if (ImGui::TreeNode("Linear Velocity")) {
-				auto& linearVel = casted->mLinearVelocity;
+				auto& linearVel = asPhysics->mLinearVelocity;
 				float guiLinearVel[3] = { linearVel.x, linearVel.y, linearVel.z };
 				ImGui::DragFloat3(std::format("##RigidPhysicsLinear").c_str(), guiLinearVel, 0.01f, 0, 0, "%.3f", flags);
 				linearVel.x = guiLinearVel[0];
@@ -84,7 +84,7 @@ namespace Refraction::Editor::GUI {
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Angular Velocity")) {
-				auto& angularVel = casted->mAngularVelocity;
+				auto& angularVel = asPhysics->mAngularVelocity;
 				float guiAngularVel[3] = { angularVel.x, angularVel.y, angularVel.z };
 				ImGui::DragFloat3(std::format("##RigidPhysicsAngular").c_str(), guiAngularVel, 0.01f, 0, 0, "%.3f", flags);
 				angularVel.x = guiAngularVel[0];
@@ -92,10 +92,10 @@ namespace Refraction::Editor::GUI {
 				angularVel.z = guiAngularVel[2];
 				ImGui::TreePop();
 			}
-		} else if (auto casted = Common::AsA<Components::Billboard>(component)) {
-			ImGui::Checkbox("Render on top", &casted->mRenderOnTop);
+		} else if (const auto asBillboard = Common::AsA<Components::Billboard>(component)) {
+			ImGui::Checkbox("Render on top", &asBillboard->mRenderOnTop);
 			ImGui::Spacing();
-			DrawTransformControls(casted->mTransform, "Billboard");
+			DrawTransformControls(asBillboard->mTransform, "Billboard");
 		}
 		ImGui::Separator();
 	}
@@ -106,14 +106,13 @@ namespace Refraction::Editor::GUI {
 		ImGui::Begin("Properties", &EditorState::Temp.PanelPropertiesVisible);
 		if (EditorState::Temp.SimulatingGame) ImGui::BeginDisabled();
 
-		auto& obj = EditorState::Temp.SelectedObject;
-		if (!obj) {
+		if (auto& obj = EditorState::Temp.SelectedObject; !obj) {
 			ImGui::Text("No object selected");
 			ResetRotationCache = true;
 		} else {
 			ImGui::Text("Instance Name: " + obj->mInstanceName);
-			std::string objFullTypeName = typeid(obj).name();
-			auto objTypeName = objFullTypeName.substr(objFullTypeName.find_last_of(':') + 1);
+			const std::string objFullTypeName = typeid(obj).name();
+			const auto objTypeName = objFullTypeName.substr(objFullTypeName.find_last_of(':') + 1);
 			ImGui::Text("Object Type: " + objTypeName);
 			const auto uuid = obj->GetUUID();
 			if (uuid.AsInt() != LastSelectedUUID) {
@@ -129,7 +128,7 @@ namespace Refraction::Editor::GUI {
 			ImGui::Separator();
 
 			if (ImGui::CollapsingHeader(std::format("Components ({})", obj->GetComponents()->size()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-				for (auto& comp : *obj->GetComponents()) {
+				for (const auto& comp : *obj->GetComponents()) {
 					if (ImGui::TreeNode(comp->GetDisplayName())) {
 						DrawComponentProperties(comp);
 						ImGui::TreePop();
@@ -137,27 +136,27 @@ namespace Refraction::Editor::GUI {
 					}
 					if (!comp->mRequired && ImGui::Button(std::format("Delete##{}", comp->GetUUID().AsString()).c_str())) {
 						obj->RemoveChild(comp->GetUUID());
-						continue;
 					}
 				}
 			}
-			ImGui::SameLine(0, 1.0f);
-			if (ImGui::Button("+ Add")) {
-				if (ImGui::BeginPopup("ComponentAddPopup")) {
-					if (!obj->GetComponent<Components::Mesh>() && ImGui::Button("MeshComponent")) {
-						obj->AddComponent<Components::Mesh>();
-					}
-					if (!obj->GetComponent<Components::APhysics>() && ImGui::Button("PhysicsComponent")) {
-						obj->AddComponent<Components::APhysics>();
-					}
-					if (!obj->GetComponent<Components::Billboard>() && ImGui::Button("BillboardComponent")) {
-						obj->AddComponent<Components::Billboard>();
-					}
+			//ImGui::SameLine(0, 1.0f);
+			if (ImGui::Button("+ Add")) ImGui::OpenPopup("ComponentAddPopup");
 
-					ImGui::EndPopup();
+			if (ImGui::BeginPopup("ComponentAddPopup")) {
+				if (!obj->GetComponent<Components::Mesh>() && ImGui::Button("MeshComponent")) {
+					obj->AddComponent<Components::Mesh>();
 				}
+				if (!obj->GetComponent<Components::APhysics>() && ImGui::Button("PhysicsComponent")) {
+					obj->AddComponent<Components::APhysics>();
+				}
+				if (!obj->GetComponent<Components::Billboard>() && ImGui::Button("BillboardComponent")) {
+					obj->AddComponent<Components::Billboard>();
+				}
+
+				ImGui::EndPopup();
 			}
 		}
+
 		if (EditorState::Temp.SimulatingGame) ImGui::EndDisabled();
 		ImGui::End();
 	}

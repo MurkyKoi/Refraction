@@ -21,6 +21,11 @@ namespace Refraction::Editor {
 		bool PanelStatisticsVisible = true;
 		bool PanelLiveCollabVisible = false;
 		bool PanelLogVisible = true;
+
+		bool DialogExportVisible = false;
+		bool DialogCreateProjectVisible = false;
+		bool DialogAddObjectVisible = false;
+		bool DialogAddComponentVisible = false;
 	};
 	struct PersistentEditorState {
 		std::filesystem::path ExecutableDir = "";
@@ -36,6 +41,6 @@ namespace Refraction::Editor {
 
 		static bool Serialise();
 		static bool Deserialise();
-		static void AddToRecentProjects(std::filesystem::path projectPath);
+		static void AddToRecentProjects(const std::filesystem::path &projectFilePath);
 	};
 }

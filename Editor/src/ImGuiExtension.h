@@ -9,12 +9,12 @@
 
 // Custom ImGui functions
 namespace ImGui {
-	static void Text(std::string text) { Text(text.c_str()); }
-	static bool TreeNode(std::string label) { return TreeNode(label.c_str()); }
+	static void Text(const std::string& text) { Text(text.c_str()); }
+	static bool TreeNode(const std::string& label) { return TreeNode(label.c_str()); }
 }
 
 namespace Refraction::Math {
-	static Vector2 FromImVec2(ImVec2 vec) {
-		return Vector2(vec.x, vec.y);
+	static Vector2 FromImVec2(const ImVec2 vec) {
+		return {vec.x, vec.y};
 	}
 }

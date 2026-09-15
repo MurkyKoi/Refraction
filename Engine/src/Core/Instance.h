@@ -13,8 +13,8 @@ namespace Refraction::Engine {
 	public:
 		Instance();
 		virtual ~Instance() = default;
-		void Start();
-		void End();
+		void Start() const;
+		void End() const;
 
 	protected:
 		Common::Shared<Platform::AWindow> mWindow;

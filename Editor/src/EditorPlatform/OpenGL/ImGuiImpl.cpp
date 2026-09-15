@@ -1,7 +1,5 @@
 #include <string>
-#include <format>
 
-#include <GLAD/glad.h>
 #include <GLFW/glfw3.h>
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_IMPL_OPENGL_DEBUG
@@ -15,7 +13,7 @@
 
 namespace Refraction::Editor::Platform::OpenGL {
 	void ImGuiImpl::Init() {
-		if (!ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)mWindow->GetNativeWindow(), true)) throw std::runtime_error("Failed to init ImGui for GLFW");
+		if (!ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(mWindow->GetNativeWindow()), true)) throw std::runtime_error("Failed to init ImGui for GLFW");
 		if (!ImGui_ImplOpenGL3_Init("#version 330")) throw std::runtime_error("Failed to init ImGui for OpenGL");
 
 		Log::Editor.Info("ImGui initialised");
@@ -31,7 +29,7 @@ namespace Refraction::Editor::Platform::OpenGL {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
-	void Platform::OpenGL::ImGuiImpl::CloseWindow() {
-		glfwSetWindowShouldClose((GLFWwindow*)mWindow->GetNativeWindow(), true);
+	void ImGuiImpl::CloseWindow() {
+		glfwSetWindowShouldClose(static_cast<GLFWwindow*>(mWindow->GetNativeWindow()), true);
 	}
 }

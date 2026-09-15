@@ -6,22 +6,24 @@
 
 
 namespace Refraction::Editor {
-	class EditorInstance : public Engine::Instance {
-	public:
-		EditorInstance() {
-			try {
-				mImGuiImpl = Common::NewShared<Platform::OpenGL::ImGuiImpl>(mWindow);
-				mLayerStack->PushLayer(Common::NewShared<EditorLayer>(mLayerStack, mProjectInstance, mWindow, mImGuiImpl));
-			} catch (const std::runtime_error& err) {
-				Log::SError("Critical error encountered during editor startup: " + std::string(err.what()));
-			} catch (...) {
-				Log::SError("Unknown critical error encountered during editor startup");
-				throw;
+	namespace {
+		class EditorInstance : public Engine::Instance {
+		public:
+			EditorInstance() {
+				try {
+					mImGuiImpl = Common::NewShared<Platform::OpenGL::ImGuiImpl>(mWindow);
+					mLayerStack->PushLayer(Common::NewShared<EditorLayer>(mLayerStack, mProjectInstance, mWindow, mImGuiImpl));
+				} catch (const std::runtime_error& err) {
+					Log::SError("Critical error encountered during editor startup: " + std::string(err.what()));
+				} catch (...) {
+					Log::SError("Unknown critical error encountered during editor startup");
+					throw;
+				}
 			}
-		}
-	private:
-		Common::Shared<Platform::OpenGL::ImGuiImpl> mImGuiImpl;
-	};
+		private:
+			Common::Shared<Platform::OpenGL::ImGuiImpl> mImGuiImpl;
+		};
+	}
 }
 
 

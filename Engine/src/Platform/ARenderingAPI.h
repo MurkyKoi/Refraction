@@ -13,11 +13,13 @@ namespace Refraction::Engine::Platform {
 
 	class ARenderingAPI {
 	public:
+		virtual ~ARenderingAPI() = default;
+
 		static Common::Shared<ARenderingAPI> Get();
 		static RenderingAPI GetAPI() { return CurrentAPI; }
 
 		virtual void Init() = 0;
-		virtual void Clear(const Math::Vector4 colour) = 0;
+		virtual void Clear(Math::Vector4 colour) = 0;
 		virtual void SetViewportRect(Math::Rect rect) = 0;
 
 	private:

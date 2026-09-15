@@ -4,13 +4,19 @@
 #include <Core/EventSystem.h>
 #include <Platform/AWindow.h>
 #include <Interface/Project.h>
-#include <EditorPlatform/OpenGL/ImGuiImpl.h>
+#include <EditorPlatform/AImGuiImpl.h>
 #include <EditorGUI/Panels/AEditorPanel.h>
+#include <EditorGUI/WindowTitleBar.h>
 
 namespace Refraction::Editor {
 	class EditorLayer : public Engine::ALayer {
 	public:
-		EditorLayer(Common::Shared<Events::AEventDispatcher> eventDispatcher, Common::Shared<Engine::Project> projectInstance, Common::Shared<Engine::Platform::AWindow> window, Common::Shared<Editor::Platform::AImGuiImpl> imGuiImpl);
+		EditorLayer(
+			const Common::Shared<Events::AEventDispatcher>& eventDispatcher,
+			const Common::Shared<Engine::Project>& projectInstance,
+			const Common::Shared<Engine::Platform::AWindow>& window,
+			const Common::Shared<Platform::AImGuiImpl>& imGuiImpl
+			);
 
 		void OnAttach() override;
 		void OnDetach() override;
@@ -21,8 +27,9 @@ namespace Refraction::Editor {
 		Common::Shared<Events::AEventDispatcher> mEventDispatcher;
 		Common::Shared<Engine::Project> mProjectInstance;
 		Common::Shared<Engine::Platform::AWindow> mWindow;
-		Common::Shared<Editor::Platform::AImGuiImpl> mImGuiImpl;
+		Common::Shared<Platform::AImGuiImpl> mImGuiImpl;
 
-		std::vector<Common::URef<GUI::AEditorPanel>> mEditorPanels;
+		Common::Unique<GUI::WindowTitleBar> mTitleBar;
+		std::vector<Common::Unique<GUI::AEditorPanel>> mEditorPanels;
 	};
 }

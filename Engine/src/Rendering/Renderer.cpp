@@ -13,9 +13,6 @@
 namespace Refraction::Engine {
 	Renderer::Renderer() = default;
 
-	static std::vector<unsigned int> VAOs = {};
-	static std::vector<unsigned int> VBOs = {};
-
 	static Math::Matrix4 projectionMatrix;
 	static std::chrono::steady_clock::time_point timeRenderLast;
 	static std::chrono::steady_clock::time_point timeTickLast;
@@ -127,18 +124,18 @@ namespace Refraction::Engine {
 			//}
 		});
 
-		UpdateUniformBuffers(projectInstance);
+		UpdateUniformBuffers();
 
 		mGBuffer->StartFrame();
 
 		// Draw scene
 		DSPassGeometry(projectInstance);
-		DSPassLighting(projectInstance);
+		DSPassLighting();
 		DSPassFinal();
 	}
 
-	static int cfaaLastScale = 1;
-	void Renderer::UpdateUniformBuffers(const Common::Shared<Project>& projectInstance) {
+	static auto cfaaLastScale = 1;
+	void Renderer::UpdateUniformBuffers() {
 		const auto& camera = Objects::Camera::ActiveCamera;
 		if (!camera) return;
 		sUBO newData{};
@@ -218,7 +215,7 @@ namespace Refraction::Engine {
 		}
 	}
 
-	void Renderer::DSPassLighting(const Common::Shared<Project>& projectInstance) const {
+	void Renderer::DSPassLighting() const {
 		const auto& graphicsSettings = Settings::CurrentSettings->Graphics;
 		mGBuffer->BindLightingPass();
 

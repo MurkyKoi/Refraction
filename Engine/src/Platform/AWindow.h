@@ -9,7 +9,7 @@
 
 namespace Refraction::Engine::Platform {
 	struct WindowProperties {
-		std::string Name = "";
+		std::string Name;
 		int Width = 0;
 		int Height = 0;
 	};
@@ -54,11 +54,18 @@ namespace Refraction::Engine::Platform {
 		virtual void InitInput() = 0;
 		virtual void OnUpdate(Common::Shared<Objects::Camera> camera) = 0;
 		virtual void Cleanup() = 0;
-		virtual Math::Rect GetRect() const { return mRect; }
-		virtual void* GetNativeWindow() const = 0;
-		virtual bool ShouldClose() const = 0;
+		[[nodiscard]] virtual Math::Rect GetRect() const { return mRect; }
+		[[nodiscard]] virtual void* GetNativeWindow() const = 0;
+		[[nodiscard]] virtual bool ShouldClose() const = 0;
+		[[nodiscard]] virtual bool IsFullscreen() const = 0;
 		// Sets the position and size of the window
 		virtual void SetRect(Math::Rect newRect) = 0;
+		virtual void Maximise() = 0;
+		virtual void Minimise() = 0;
+		virtual void Restore() = 0;
+		virtual void Close() = 0;
+
+
 	protected:
 		WindowInputState mInputStateLast = WindowInputState::NONE;
 		Math::Rect mRect = Math::Rect(512);

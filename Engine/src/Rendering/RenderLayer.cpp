@@ -16,15 +16,15 @@ namespace Refraction::Engine {
 	void RenderLayer::OnPass() {
 		if (mProjectInstance->IsLoaded()) {
 			mRenderer.RenderFrame(mProjectInstance);
-			mEventDispatcher->Dispatch(Common::NewShared<Events::FrameRenderedEvent>(mRenderer.GetFinalOutput()));
 		}
+		mEventDispatcher->Dispatch(Common::NewShared<Events::FrameRenderedEvent>(mRenderer.GetFinalOutput()));
 	}
 
 	void RenderLayer::OnEvent(const Common::Shared<Events::Event> event) {
 		// Update renderer for a resized viewport
-		if (auto e = Common::AsA<Events::ViewportResizedEvent>(event)) {
-			mRenderer.SetViewport(Math::Rect(e->mViewportRect.x, e->mViewportRect.y, e->mViewportRect.w, e->mViewportRect.h));
-		} else if (auto e = Common::AsA<Events::ProgramCloseEvent>(event)) {
+		if (const auto asResize = Common::AsA<Events::ViewportResizedEvent>(event)) {
+			mRenderer.SetViewport(asResize->mViewportRect);
+		} else if (auto asClose = Common::AsA<Events::ProgramCloseEvent>(event)) {
 
 		}
 	}

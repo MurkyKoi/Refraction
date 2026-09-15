@@ -4,6 +4,7 @@
 #include "FileHandling.h"
 
 // Needs a NULL terminator, otherwise operations like shader compilation will find junk characters at the end of the file
+// Cmon man this is basic C++ knowledge
 constexpr auto fileTerminator = "\0";
 
 namespace Refraction::FileHandling {
@@ -19,7 +20,7 @@ namespace Refraction::FileHandling {
 		return ResourcesPath;
 	}
 
-	void SetResourcesPath(fs::path path) {
+	void SetResourcesPath(const fs::path& path) {
 		ResourcesPath = path;
 	}
 
@@ -31,7 +32,7 @@ namespace Refraction::FileHandling {
 			throw Common::RuntimeError("failed to open file");
 		};
 
-		size_t fileSize = (size_t)file.tellg();
+		const size_t fileSize = file.tellg();
 		std::vector<char> buffer(fileSize);
 
 		file.seekg(0);
@@ -50,7 +51,7 @@ namespace Refraction::FileHandling {
 		return fs::exists(path);
 	}
 
-	std::vector<fs::directory_entry> GetFilesInFolder(fs::path folderPath) {
+	std::vector<fs::directory_entry> GetFilesInFolder(const fs::path& folderPath) {
 		if (!fs::exists(folderPath)) throw Common::RuntimeError("Path " + folderPath.string() + " does not exist.");
 		std::vector<fs::directory_entry> files;
 		for (const auto& file : fs::directory_iterator(folderPath)) {
@@ -59,7 +60,7 @@ namespace Refraction::FileHandling {
 		return files;
 	}
 
-	std::vector<fs::directory_entry> GetFilesOfExtInFolder(fs::path folderPath, std::string ext) {
+	std::vector<fs::directory_entry> GetFilesOfExtInFolder(const fs::path& folderPath, const std::string& ext) {
 		if (!fs::exists(folderPath)) throw Common::RuntimeError("Path " + folderPath.string() + " does not exist.");
 		std::vector<fs::directory_entry> files;
 		for (const auto& file : fs::directory_iterator(folderPath)) {
@@ -70,17 +71,17 @@ namespace Refraction::FileHandling {
 		return files;
 	}
 
-	fs::directory_entry GetFirstFileOfExtInFolder(fs::path folderPath, std::string ext) {
+	fs::directory_entry GetFirstFileOfExtInFolder(const fs::path& folderPath, const std::string& ext) {
 		if (!fs::exists(folderPath)) throw Common::RuntimeError("Path " + folderPath.string() + " does not exist.");
 		for (const auto& file : fs::directory_iterator(folderPath)) {
 			if (file.path().extension() == ext) {
 				return file;
 			};
 		};
-		return fs::directory_entry();
+		return {};
 	}
 
-	std::vector<fs::directory_entry> GetFoldersInFolder(fs::path folderPath) {
+	std::vector<fs::directory_entry> GetFoldersInFolder(const fs::path& folderPath) {
 		if (!fs::exists(folderPath)) throw Common::RuntimeError("Path " + folderPath.string() + " does not exist.");
 		std::vector<fs::directory_entry> folders;
 		for (const auto& folder : fs::recursive_directory_iterator(folderPath)) {
@@ -90,7 +91,7 @@ namespace Refraction::FileHandling {
 		return folders;
 	}
 
-	std::vector<fs::directory_entry> GetItemsInFolder(fs::path folderPath) {
+	std::vector<fs::directory_entry> GetItemsInFolder(const fs::path& folderPath) {
 		auto folders = GetFoldersInFolder(folderPath);
 		auto files = GetFilesInFolder(folderPath);
 		folders.insert(folders.end(), files.begin(), files.end());

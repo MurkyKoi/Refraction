@@ -29,7 +29,7 @@ namespace Refraction::Engine {
 		}
 	}
 
-	void Instance::Start() {
+	void Instance::Start() const {
 		try {
 			mWindow->InitInput();
 			while (!mWindow->ShouldClose()) {
@@ -48,12 +48,12 @@ namespace Refraction::Engine {
 		}
 	}
 
-	void Instance::End() {
+	void Instance::End() const {
 		try {
 			Log::SInfo("Shutting down instance");
 			// Save and close project just in case, user would normally close from GUI
 			if (mProjectInstance->IsLoaded()) {
-				mProjectInstance->Save();
+				auto _ = mProjectInstance->Save();
 				mProjectInstance->Close();
 			}
 			mLayerStack->OnDetach();

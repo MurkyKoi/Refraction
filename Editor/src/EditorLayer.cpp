@@ -11,17 +11,21 @@
 
 #include "EditorLayer.h"
 
-constexpr int ImGuiMenuHeight = 16;
-constexpr int ImGuiRibbonHeight = 48;
+constexpr auto ImGuiMenuHeight = 16;
+constexpr auto ImGuiRibbonHeight = 48;
 
 namespace Refraction::Editor {
-	EditorLayer::EditorLayer(Common::Shared<Events::AEventDispatcher> eventDispatcher, Common::Shared<Engine::Project> projectInstance, Common::Shared<Engine::Platform::AWindow> window, Common::Shared<Editor::Platform::AImGuiImpl> imGuiImpl)
-		: mEventDispatcher(eventDispatcher), mProjectInstance(projectInstance), mWindow(window), mImGuiImpl(imGuiImpl) {
-		mEditorPanels.push_back(Common::NewURef<GUI::ExplorerPanel>(eventDispatcher, mWindow));
-		mEditorPanels.push_back(Common::NewURef<GUI::PropertiesPanel>(eventDispatcher, mWindow));
-		mEditorPanels.push_back(Common::NewURef<GUI::ViewportPanel>(eventDispatcher, mWindow));
-		mEditorPanels.push_back(Common::NewURef<GUI::LogPanel>(eventDispatcher, mWindow));
-		mEditorPanels.push_back(Common::NewURef<GUI::StatsPanel>(eventDispatcher, mWindow));
+	EditorLayer::EditorLayer(
+		const Common::Shared<Events::AEventDispatcher>& eventDispatcher,
+		const Common::Shared<Engine::Project>& projectInstance,
+		const Common::Shared<Engine::Platform::AWindow>& window,
+		const Common::Shared<Platform::AImGuiImpl>& imGuiImpl) : mEventDispatcher(eventDispatcher), mProjectInstance(projectInstance), mWindow(window), mImGuiImpl(imGuiImpl) {
+		mTitleBar = Common::NewUnique<GUI::WindowTitleBar>(mEventDispatcher, mWindow, mImGuiImpl);
+		mEditorPanels.push_back(Common::NewUnique<GUI::ExplorerPanel>(eventDispatcher, mWindow));
+		mEditorPanels.push_back(Common::NewUnique<GUI::PropertiesPanel>(eventDispatcher, mWindow));
+		mEditorPanels.push_back(Common::NewUnique<GUI::ViewportPanel>(eventDispatcher, mWindow));
+		mEditorPanels.push_back(Common::NewUnique<GUI::LogPanel>(eventDispatcher, mWindow));
+		mEditorPanels.push_back(Common::NewUnique<GUI::StatsPanel>(eventDispatcher, mWindow));
 		//mEditorPanels.push_back(Common::NewURef<GUI::LiveCollabPanel>(eventDispatcher, mWindow));
 	}
 
@@ -35,8 +39,7 @@ namespace Refraction::Editor {
 		mWindow->mIgnoreWindowResize = true;
 		mImGuiImpl->Init();
 
-		auto themeFilePath = FileHandling::GetWorkingDirectory() / ("EditorTheme" + std::string(REFRACTION_THEME_EXTENSION));
-		if (std::filesystem::exists(themeFilePath)) {
+		if (const auto themeFilePath = FileHandling::GetWorkingDirectory() / ("EditorTheme" + std::string(REFRACTION_THEME_EXTENSION)); std::filesystem::exists(themeFilePath)) {
 			EditorTheme::LoadFromFile(themeFilePath);
 			EditorTheme::ApplyTheme();
 		} else {
@@ -44,7 +47,7 @@ namespace Refraction::Editor {
 			EditorTheme::ApplyTheme();
 		}
 
-		for (auto& panel : mEditorPanels) {
+		for (const auto& panel : mEditorPanels) {
 			panel->Init();
 		}
 	}
@@ -59,27 +62,29 @@ namespace Refraction::Editor {
 	}
 
 	void EditorLayer::OnPass() {
-		auto activeScene = mProjectInstance->GetActiveScene().lock();
+		const auto activeScene = mProjectInstance->GetActiveScene().lock();
 		if (activeScene) {
-			auto sceneChildren = activeScene->GetChildren();
-			if (sceneChildren->size() > 0) {
+			if (const auto sceneChildren = activeScene->GetChildren(); !sceneChildren->empty()) {
 				mImGuiImpl->mSelectedObject = sceneChildren->at(0);
 			}
 		}
 		mImGuiImpl->BeginDraw();
 
-		mImGuiImpl->DrawMenu();
+		auto titleBarOffset = 0.0f;
+		if(mWindow->IsFullscreen()) titleBarOffset = 6.0f;
+		mTitleBar->Draw(titleBarOffset);
+
 		mImGuiImpl->DrawRibbon();
 
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		//Log::Editor.Info(Math::Vector2(viewport->Size.x, viewport->Size.y).ToString());
-		auto totalOffset = ImGuiMenuHeight + ImGuiRibbonHeight;
+		const auto totalOffset = ImGuiMenuHeight + ImGuiRibbonHeight + mTitleBar->GetHeight();
 		ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + totalOffset));
 		ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - totalOffset));
 		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		constexpr ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+		                                         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+		                                         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 		if (!mProjectInstance->IsLoaded()) {
 			// TODO: Launcher
@@ -92,22 +97,18 @@ namespace Refraction::Editor {
 		ImGui::PopStyleVar(2);
 
 		ImGuiStyle& style = ImGui::GetStyle();
-		float minSizeX = style.WindowMinSize.x;
+		const float minSizeX = style.WindowMinSize.x;
 		style.WindowMinSize.x = 300.0f;
 		ImGui::DockSpace(ImGui::GetID("EditorDockspace"));
 		style.WindowMinSize.x = minSizeX;
 
-		for (auto& panel : mEditorPanels) {
+		for (const auto& panel : mEditorPanels) {
 			panel->OnDraw();
 		}
 		ImGui::End();
 
 		mImGuiImpl->EndDraw();
 		mImGuiImpl->UpdateInputState();
-		
-		if (mImGuiImpl->ShouldQuit()) {
-			mEventDispatcher->Dispatch(Common::NewShared<Events::ProgramCloseEvent>());
-		}
 
 		if (EditorState::Temp.ViewportHovered) {
 			mWindow->mInputState = Engine::Platform::WindowInputState::VIEWPORT;
@@ -116,13 +117,12 @@ namespace Refraction::Editor {
 		}
 	}
 
-	void EditorLayer::OnEvent(Common::Shared<Events::Event> event) {
-		if (auto e = Common::AsA<Events::ViewportResizedEvent>(event)) {
-		} else if (auto e = Common::AsA<Events::ProgramCloseEvent>(event)) {
+	void EditorLayer::OnEvent(const Common::Shared<Events::Event> event) {
+		if (auto asCloseEvent = Common::AsA<Events::ProgramCloseEvent>(event)) {
 			// TODO: close confirmation modal
 		}
 
-		for (auto& panel : mEditorPanels) {
+		for (const auto& panel : mEditorPanels) {
 			panel->OnEvent(event);
 			if (event->Consumed()) break;
 		}

@@ -35,10 +35,10 @@ namespace Refraction {
 
 		// Unique pointer wrapper
 		template<typename T>
-		using URef = std::unique_ptr<T>;
+		using Unique = std::unique_ptr<T>;
 		// Creates a new URef (unique pointer)
 		template<typename T, typename... Args>
-		constexpr URef<T> NewURef(Args&&... args) {
+		constexpr Unique<T> NewUnique(Args&&... args) {
 			return std::make_unique<T>(std::forward<Args>(args)...);
 		}
 

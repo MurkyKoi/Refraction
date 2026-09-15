@@ -1,8 +1,5 @@
 #pragma once
 
-#include <iostream>
-
-#include <GLAD/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <Platform/AWindow.h>
@@ -25,9 +22,14 @@ namespace Refraction::Engine::Platform {
 		void OnUpdate(Common::Shared<Objects::Camera> camera) override;
 		void Cleanup() override;
 
-		void* GetNativeWindow() const override { return mHandle; }
-		bool ShouldClose() const override;
+		[[nodiscard]] void* GetNativeWindow() const override { return mHandle; }
+		[[nodiscard]] bool ShouldClose() const override;
+		[[nodiscard]] bool IsFullscreen() const override;
 		void SetRect(Math::Rect newRect) override;
+		void Maximise() override;
+		void Minimise() override;
+		void Restore() override;
+		void Close() override;
 	private:
 		GLFWwindow* mHandle = nullptr;
 	};

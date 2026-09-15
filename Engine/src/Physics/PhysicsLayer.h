@@ -11,7 +11,7 @@ namespace Refraction::Events {
 namespace Refraction::Engine {
 	class PhysicsLayer : public ALayer {
 	public:
-		PhysicsLayer(Common::Shared<Events::AEventDispatcher> eventDispatcher, Common::Shared<Project> projectInstance);
+		PhysicsLayer(const Common::Shared<Events::AEventDispatcher>& eventDispatcher, const Common::Shared<Project>& projectInstance);
 
 		void OnAttach() override;
 		void OnDetach() override;

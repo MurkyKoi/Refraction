@@ -502,6 +502,16 @@ namespace Refraction::Engine {
 		});
 	}
 
+	void Project::SimulateGame() {
+		if(mIsSimulatingGame) return;
+		mSimulatingRootObject = mRootObject->Clone();
+	}
+
+	void Project::StopSimulatingGame() {
+		if(!mIsSimulatingGame) return;
+		mSimulatingRootObject.reset();
+	}
+
 	Common::Ref<Objects::SceneRoot> Project::NewScene() {
 		if (!IsLoaded()) return {};
 		Log::Project.Info("Creating a new scene");

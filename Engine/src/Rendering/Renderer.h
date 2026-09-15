@@ -33,12 +33,12 @@ namespace Refraction::Engine {
 		[[nodiscard]] RendererState GetState() const { return mState; }
 		[[nodiscard]] Common::Ref<Assets::Image> GetFinalOutput() const { return mFinalOutput; }
 	private:
-		void UpdateUniformBuffers(const Common::Shared<Project> &projectInstance);
+		void UpdateUniformBuffers();
 		void Cleanup();
 
 		// Deferred shading functions
 		void DSPassGeometry(const Common::Shared<Project> &projectInstance) const;
-		void DSPassLighting(const Common::Shared<Project> &projectInstance) const;
+		void DSPassLighting() const;
 		void DSPassFinal() const;
 
 		RendererState mState = RendererState::NONE;

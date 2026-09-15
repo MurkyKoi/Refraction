@@ -17,10 +17,10 @@ namespace Refraction::Engine {
 
 	struct ProjectData {
 		UUID InitSceneUUID = UUID::Null();
-
 		std::vector<Common::Shared<Objects::SceneRoot>> Scenes = {};
 		std::vector<Common::Shared<Objects::AObject>> GlobalObjects = {};
 		Common::Shared<Objects::Camera> ActiveCamera = nullptr;
+
 		bool IsRemote = false; // Determines whether some operations should be ignored as it isn't a local project
 	};
 
@@ -47,12 +47,15 @@ namespace Refraction::Engine {
 		bool Open(const std::filesystem::path& projectPath);
 
 		// Saves the project to disk, returns success
-		bool Save() const;
+		[[nodiscard]] bool Save() const;
 		// Closes the currently loaded project
 		void Close();
 
 		// Handles a message sent by a live collaboration server
 		void ProcessRemoteMessage(const std::string& message);
+
+		void SimulateGame();
+		void StopSimulatingGame();
 
 		// Creates a new scene under the active project, returns the new SceneRoot (nullptr if failed)
 		Common::Ref<Objects::SceneRoot> NewScene();
@@ -60,9 +63,9 @@ namespace Refraction::Engine {
 		// Loads a scene under the active project, returns success
 		bool OpenScene(const UUID& sceneUUID);
 		// Returns the currently open scene
-		[[nodiscard]] inline Common::Ref<Objects::SceneRoot> GetActiveScene() const { return mActiveScene; }
+		[[nodiscard]] Common::Ref<Objects::SceneRoot> GetActiveScene() const { return mActiveScene; }
 		// Returns all scenes under this project
-		[[nodiscard]] inline std::vector<Common::Ref<Objects::SceneRoot>> GetScenes() const {
+		[[nodiscard]] std::vector<Common::Ref<Objects::SceneRoot>> GetScenes() const {
 			std::vector<Common::Ref<Objects::SceneRoot>> vec;
 			for (auto& scene : mProjectData.Scenes) {
 				vec.push_back(Common::NewRef(scene));
@@ -70,17 +73,17 @@ namespace Refraction::Engine {
 			return vec;
 		}
 		// Returns all global objects under this project
-		[[nodiscard]] inline std::vector<Common::Ref<Objects::AObject>> GetGlobalObjects() const {
+		[[nodiscard]] std::vector<Common::Ref<Objects::AObject>> GetGlobalObjects() const {
 			std::vector<Common::Ref<Objects::AObject>> vec;
 			for (auto& obj : mProjectData.GlobalObjects) {
 				vec.push_back(Common::NewRef(obj));
 			}
 			return vec;
 		}
-		[[nodiscard]] inline std::filesystem::path GetFilePath() const { return GetProjectFilePath(mProjectPath); }
+		[[nodiscard]] std::filesystem::path GetFilePath() const { return GetProjectFilePath(mProjectPath); }
 
-		[[nodiscard]] inline bool IsLoaded() const { return !mProjectPath.empty(); }
-		[[nodiscard]] inline bool IsRemote() const { return mProjectData.IsRemote; }
+		[[nodiscard]] bool IsLoaded() const { return !mProjectPath.empty(); }
+		[[nodiscard]] bool IsRemote() const { return mProjectData.IsRemote; }
 
 	private:
 		std::filesystem::path mProjectPath;
@@ -89,6 +92,9 @@ namespace Refraction::Engine {
 		// Contains all the scenes and global objects
 		Common::Shared<Objects::AObject> mRootObject = nullptr;
 		Common::Ref<Objects::SceneRoot> mActiveScene = {};
+
+		Common::Shared<Objects::AObject> mSimulatingRootObject = nullptr;
+		bool mIsSimulatingGame = false;
 	};
 }
 

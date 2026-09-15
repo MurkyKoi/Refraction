@@ -1,5 +1,8 @@
 #pragma once
 
+#include <future>
+#include <thread>
+
 #include <Core/Common.h>
 #include <Core/EventSystem.h>
 #include <Core/LayerSystem.h>

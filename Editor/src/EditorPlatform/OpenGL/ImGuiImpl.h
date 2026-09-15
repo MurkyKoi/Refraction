@@ -8,9 +8,9 @@ namespace Refraction::Editor::Platform::OpenGL {
 		using AImGuiImpl::AImGuiImpl;
 
 		void Init() override;
-	private:
 		void BeginDraw() override;
 		void EndDraw() override;
+	protected:
 		void CloseWindow() override;
 	};
 }

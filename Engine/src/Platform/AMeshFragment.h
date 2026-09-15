@@ -17,9 +17,9 @@ namespace Refraction::Engine {
 			Common::Ref<Assets::Material> mMaterial;
 
 			// Returns a mesh fragment using the current rendering API
-			static Common::Shared<AMeshFragment> MakeMeshFragment(std::vector<sVertex> vertices, std::vector<unsigned int> indices, Common::Ref<Assets::Material> material);
+			static Common::Shared<AMeshFragment> MakeMeshFragment(const std::vector<sVertex>& vertices, const std::vector<unsigned int>& indices, const Common::Ref<Assets::Material>& material);
 
-			AMeshFragment(std::vector<sVertex> vertices, std::vector<unsigned int> indices, Common::Ref<Assets::Material> material);
+			AMeshFragment(const std::vector<sVertex>& vertices, const std::vector<unsigned int>& indices, const Common::Ref<Assets::Material>& material);
 			virtual ~AMeshFragment();
 
 			virtual void Upload() = 0;

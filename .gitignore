@@ -399,7 +399,7 @@ FodyWeavers.xsd
 /.idea/.idea.RefractionEngine/.idea
 
 # Don't ignore resources
-!/Rendering/Resources/**/*.obj
+!/Resources/**
 
 # Ignore testenv
 TestEnvironment

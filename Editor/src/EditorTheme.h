@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <array>
 #include <filesystem>
 
@@ -55,18 +54,18 @@ namespace Refraction::Editor {
 		// Saves to either the currently loaded theme file or another specified file. Returns success.
 		static bool SaveToFile(std::filesystem::path path = "");
 
-		static inline void PushColour(ImGuiCol_ widget, ColourIndex index, float alpha = 1.0f) {
+		static void PushColour(const ImGuiCol_ widget, const ColourIndex index, const float alpha = 1.0f) {
 			ImVec4 colour = Palette[index];
 			colour.w = alpha;
 			ImGui::PushStyleColor(widget, colour);
 		}
-		static inline void PopColour(int count = 1) {
+		static void PopColour(const int count = 1) {
 			ImGui::PopStyleColor(count);
 		}
 
-		static inline ImVec4 FromRGBA(uint8_t R, uint8_t G, uint8_t B, uint8_t A = 255) {
+		static ImVec4 FromRGBA(const uint8_t R, const uint8_t G, const uint8_t B, const uint8_t A = 255) {
 			constexpr float rgbIntToFrac = 1.0f / 255;
-			return ImVec4(R * rgbIntToFrac, G * rgbIntToFrac, B * rgbIntToFrac, A * rgbIntToFrac);
+			return {static_cast<float>(R) * rgbIntToFrac, static_cast<float>(G) * rgbIntToFrac, static_cast<float>(B) * rgbIntToFrac, static_cast<float>(A) * rgbIntToFrac};
 		}
 	private:
 		static std::filesystem::path CurrentThemePath;

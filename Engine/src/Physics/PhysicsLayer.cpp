@@ -1,7 +1,7 @@
 #include "PhysicsLayer.h"
 
 namespace Refraction::Engine {
-	PhysicsLayer::PhysicsLayer(Common::Shared<Events::AEventDispatcher> eventDispatcher, Common::Shared<Project> projectInstance)
+	PhysicsLayer::PhysicsLayer(const Common::Shared<Events::AEventDispatcher>& eventDispatcher, const Common::Shared<Project>& projectInstance)
 		: mEventDispatcher(eventDispatcher), mProjectInstance(projectInstance) {}
 
 	void PhysicsLayer::OnAttach() {
@@ -12,7 +12,7 @@ namespace Refraction::Engine {
 
 	void PhysicsLayer::OnPass() {
 		if (mProjectInstance->IsLoaded()) {
-			if (auto scene = mProjectInstance->GetActiveScene().lock()) {
+			if (const auto scene = mProjectInstance->GetActiveScene().lock()) {
 				scene->TickScene(mProjectInstance->GetGlobalObjects());
 			}
 		}

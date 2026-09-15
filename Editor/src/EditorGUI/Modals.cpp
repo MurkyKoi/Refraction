@@ -3,7 +3,7 @@
 #include "Modals.h"
 
 namespace Refraction::Editor::GUI {
-	void Confirm(bool& shouldDisplay, const ModalData& data, std::function<void()> onConfirm) {
+	void Confirm(bool& shouldDisplay, const ModalData& data, const std::function<void()>& onConfirm) {
 		if (!shouldDisplay) return;
 
 		ImGui::OpenPopup(data.Title.c_str());
@@ -40,16 +40,16 @@ namespace Refraction::Editor::GUI {
 		ImGui::PopStyleVar();
 	}
 
-	void ThreeOptionModal(bool& shouldDisplay, const ModalData& data, const Option& opt1, const Option& opt2, const Option& opt3, std::function<void()> onNotOpt3) {
+	void ThreeOptionModal(bool& shouldDisplay, const ModalData& data, const Option& opt1, const Option& opt2, const Option& opt3, const std::function<void()>& onNotOpt3) {
 		if (!shouldDisplay) return;
 		bool opt3Chosen = false;
 
 		ImGui::OpenPopup(data.Title.c_str());
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 
-		float spacing = 5.0f;
-		float widest = std::max({ ImGui::CalcTextSize(opt1.Name.c_str()).x, ImGui::CalcTextSize(opt2.Name.c_str()).x, ImGui::CalcTextSize(opt3.Name.c_str()).x });
-		auto buttonWidth = widest + ImGui::GetStyle().FramePadding.x * 2.0f;
+		constexpr float spacing = 5.0f;
+		const float widest = std::max({ ImGui::CalcTextSize(opt1.Name.c_str()).x, ImGui::CalcTextSize(opt2.Name.c_str()).x, ImGui::CalcTextSize(opt3.Name.c_str()).x });
+		const auto buttonWidth = widest + ImGui::GetStyle().FramePadding.x * 2.0f;
 
 		ImGui::SetNextWindowSize({ buttonWidth * 3.0f + spacing * 4.0f, 0.0f });
 		EditorTheme::PushColour(ImGuiCol_PopupBg, EditorTheme::ColourIndex_Background1);
